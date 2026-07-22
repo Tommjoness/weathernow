@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Weerbriefing</title>
 <meta name="description" content="Weersverwachting met kwartierneerslag, spreidingsband, luchtkwaliteit en nachtzicht.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://tilecache.rainviewer.com https://basemaps.cartocdn.com; connect-src 'self' https://api.rainviewer.com https://api.open-meteo.com https://ensemble-api.open-meteo.com https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.bigdatacloud.net; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://tilecache.rainviewer.com https://basemaps.cartocdn.com; connect-src 'self' https://api.rainviewer.com https://api.open-meteo.com https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.bigdatacloud.net; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F4F5F3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Weerbriefing">
@@ -157,6 +157,7 @@
   /* radar */
   .radar{margin-top:var(--s2)}
   #radar{width:100%;height:auto;display:block;border:1px solid var(--rule);background:var(--rule-soft)}
+  #suntimes{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
   #radartijd{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:center;
     font-size:21px;letter-spacing:.04em;margin:14px 0 10px;line-height:1.2}
   #radartijd small{display:block;font-family:var(--sans);font-size:10.5px;letter-spacing:.14em;
@@ -182,7 +183,7 @@
   .day.on{box-shadow:inset 2px 0 0 var(--carmine)}
   .day.on .dname{font-weight:500}
   .dname{font-size:14.5px;letter-spacing:.01em;white-space:nowrap}
-  .row.kop{border-bottom:1px solid var(--ink);padding:0 0 7px;cursor:default}
+  .row.kop{border-bottom:1px solid var(--ink);padding:13px 0 8px;cursor:default}
   .row.kop:hover{background:none}
   .row.kop .dmin,.row.kop .dmax,.row.kop .drain,.row.kop .dwind,.row.kop .nmeta,.row.kop .score{text-align:center}
   .row.kop>*{font-family:var(--sans)!important;font-weight:500!important;font-size:9.5px!important;
@@ -221,6 +222,7 @@
     .sheet{padding:24px 20px 24px}
     :root{--s2:14px; --s3:20px; --s4:30px}
     .brief{font-size:17.5px;line-height:1.5}
+    #suntimes{align-items:flex-start;text-align:left}
     #place{font-size:34px}
     #t{font-size:86px}
     .hero{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"temp temp" "ico info";
@@ -237,14 +239,17 @@
     .dname{font-size:12.5px}
     .dcond{display:none}
     .bar{display:none}
-    .night{grid-template-columns:70px 40px minmax(20px,1fr) max-content;gap:9px}
+    .night{grid-template-columns:70px 40px minmax(20px,1fr) max-content;gap:4px 9px}
+    .night .nmeta.wide{display:block;grid-column:1 / -1;text-align:left;white-space:normal;
+      font-size:11.5px;color:var(--ink-45);margin-top:2px}
+    .row.night.kop .nmeta.wide{display:none}
     .ctrl{grid-template-columns:74px 1fr 1fr;gap:8px}
     .ctrl .nmeta{display:none}
     .ctrl .mono{font-size:11.5px}
-    .nmeta.wide{display:none}
+    .ctrl .nmeta.wide{display:none}
     .tools{width:100%}
     input[type=text]{flex:1;min-width:0;width:auto}
-    #chart,#nc{width:calc(100% + 34px);margin-left:-17px}
+    #chart,#nc,#radar{width:calc(100% + 34px);margin-left:-17px}
     .tools button{font-size:9.5px;padding:7px 9px;letter-spacing:.08em}
     .mast{gap:14px}
     .mastright{align-items:stretch;text-align:left;width:100%;min-width:0}
@@ -325,7 +330,7 @@
 
     <h2><span>Neerslagradar</span></h2>
     <div class="radar">
-      <canvas id="radar" width="640" height="380" aria-label="Neerslagradar rond je locatie"></canvas>
+      <canvas id="radar" width="640" height="470" aria-label="Neerslagradar rond je locatie"></canvas>
       <div id="radartijd"></div>
       <div class="radarbalk">
         <button id="rspeel" title="Afspelen of pauzeren">Speel af</button>
@@ -352,7 +357,7 @@
     <div class="stats" id="aq"></div>
 
     <footer>
-      <span>Weer: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>, ECMWF en DWD, ICON-ensemble, CAMS.
+      <span>Weer: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>, ECMWF en DWD, CAMS.
         Radar: <a href="https://www.rainviewer.com" target="_blank" rel="noopener">RainViewer</a>.
         Kaart: <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> en
         <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.</span>
@@ -513,7 +518,7 @@ function maan(d){
 }
 
 /* ---------- state ---------- */
-const S={lat:null,lon:null,label:"",d:null,ens:null,air:null,i0:0,dag:null,op:0,geo:null,bereik:24};
+const S={lat:null,lon:null,label:"",d:null,air:null,i0:0,dag:null,op:0,geo:null,bereik:24};
 const KEY_P="weerbriefing.plaats",KEY_D="weerbriefing.data",KEY_L="weerbriefing.lijst";
 const ls={
   get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}},
@@ -542,19 +547,16 @@ async function load(lat,lon,label,stil){
   const fmin=basis+"&past_hours=24&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,"
     +"precipitation_probability,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,"
     +"wind_gusts_10m,uv_index,pressure_msl,is_day";
-  const e="https://ensemble-api.open-meteo.com/v1/ensemble?latitude="+lat+"&longitude="+lon
-    +"&hourly=temperature_2m&models=icon_seamless&forecast_days=3&timezone=auto";
   const a="https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+lat+"&longitude="+lon
     +"&current=european_aqi,pm2_5,pm10&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,"
     +"ragweed_pollen,olive_pollen&forecast_days=1&timezone=auto";
 
   try{
-    const [rf,re,ra]=await Promise.allSettled([j(f),j(e),j(a)]);
+    const [rf,ra]=await Promise.allSettled([j(f),j(a)]);
     let vol=rf.status==="fulfilled"?rf.value:null;
     if(!vol) vol=await j(fmin);
     if(mijnBeurt!==laadTeller) return;   // er is inmiddels een nieuwere plaats gekozen
     S.d=vol;
-    S.ens=re.status==="fulfilled"?re.value:null;
     S.air=ra.status==="fulfilled"?ra.value:null;
     S.op=Date.now(); if(!stil) S.dag=null;
     ls.set(KEY_P,{lat:S.lat,lon:S.lon,label:label});
@@ -568,7 +570,7 @@ async function load(lat,lon,label,stil){
     if(mijnBeurt!==laadTeller) return;
     const oud=ls.get(KEY_D,null);
     if(oud&&oud.d){
-      S.d=oud.d;S.air=oud.air;S.ens=null;S.label=oud.label;S.lat=oud.lat;S.lon=oud.lon;S.op=oud.op;
+      S.d=oud.d;S.air=oud.air;S.label=oud.label;S.lat=oud.lat;S.lon=oud.lon;S.op=oud.op;
       tekenAlles();
       document.getElementById("app").style.display="block";
       st.style.display="block";st.className="msg err";
@@ -770,23 +772,6 @@ function briefing(){
   document.getElementById("brief").innerHTML=nbsp(zin1+" "+zin2+" "+zin3);
 }
 
-/* ---------- ensemble ---------- */
-function ensBand(tijden){
-  if(!S.ens||!S.ens.hourly) return null;
-  const eh=S.ens.hourly,keys=Object.keys(eh).filter(k=>k.indexOf("temperature_2m")===0);
-  if(keys.length<3) return null;
-  const idx={};eh.time.forEach((t,i)=>idx[t]=i);
-  const lo=[],hi=[];let geldig=0;
-  tijden.forEach(t=>{
-    const i=idx[t];
-    if(i==null){lo.push(null);hi.push(null);return;}
-    const v=keys.map(k=>eh[k][i]).filter(x=>x!=null).sort((a,b)=>a-b);
-    if(v.length<3){lo.push(null);hi.push(null);return;}
-    geldig++;lo.push(v[Math.floor(v.length*0.1)]);hi.push(v[Math.ceil(v.length*0.9)-1]);
-  });
-  return geldig>3?{lo:lo,hi:hi}:null;
-}
-
 /* ---------- etmaal: dagbalk plus temperatuurcurve op dezelfde schaal ---------- */
 function etmaal(start,n){
   const h=S.d.hourly,T=[],A=[],P=[],L=[],W_=[],G=[],C=[],D=[],TI=[],ND=[],WD=[];
@@ -797,7 +782,6 @@ function etmaal(start,n){
     W_.push(h.wind_speed_10m[i]);G.push(h.wind_gusts_10m[i]);C.push(h.cloud_cover[i]);
     D.push(h.weather_code[i]);ND.push(h.is_day[i]);WD.push(h.wind_direction_10m[i]);
   }
-  const band=ensBand(TI);
   const M=(typeof window!=="undefined"&&window.innerWidth)?window.innerWidth<760:false;
 
   const W=M?380:900, H=M?292:296, pl=M?26:44, pr=M?8:20, iw=W-pl-pr;
@@ -807,7 +791,6 @@ function etmaal(start,n){
   const stap = n<=24 ? (M?4:3) : n<=48 ? (M?8:6) : (M?24:12);
 
   let mn=Math.min(...T),mx=Math.max(...T);
-  if(band){band.lo.forEach(v=>{if(v!=null)mn=Math.min(mn,v);});band.hi.forEach(v=>{if(v!=null)mx=Math.max(mx,v);});}
   mn=Math.floor(mn-1);mx=Math.ceil(mx+1);
   const span=(mx-mn)||1;
   const cw=iw/(T.length-1);
@@ -842,8 +825,16 @@ function etmaal(start,n){
     if(di2>=0) tijd=g.op?day.sunrise[di2]:day.sunset[di2];
     const xx=x(g.i)-cw/2;
     balk+=`<line x1="${xx}" y1="${by-5}" x2="${xx}" y2="${by+bh+4}" stroke="${INK}" stroke-width="1"/>`;
-    if(tijd&&n<=48) balk+=`<text x="${xx+(g.op?4:-4)}" y="${by-9}" text-anchor="${g.op?"start":"end"}" fill="${INK45}"
-      font-family="DM Mono,monospace" font-size="${F.zon}">${g.op?"op ":"onder "}${hhmm(tijd)}</text>`;
+    if(tijd&&n<=48){
+      const tekst=(g.op?"op ":"onder ")+hhmm(tijd);
+      const breed=tekst.length*F.zon*0.62;
+      // past het label niet aan de gekozen kant, dan klapt het naar de andere kant
+      let anker=g.op?"start":"end", tx=xx+(g.op?4:-4);
+      if(anker==="end"&&tx-breed<2){anker="start";tx=xx+4;}
+      if(anker==="start"&&tx+breed>W-2){anker="end";tx=xx-4;}
+      balk+=`<text x="${tx}" y="${by-9}" text-anchor="${anker}" fill="${INK45}"
+        font-family="DM Mono,monospace" font-size="${F.zon}">${tekst}</text>`;
+    }
   });
 
   let nu="";
@@ -854,16 +845,7 @@ function etmaal(start,n){
         <text x="${xn+4}" y="${by+bh+13}" fill="${CARMINE}" font-family="DM Mono,monospace" font-size="${F.nu}">nu</text>`;
   }
 
-  let bars="",pts=[],dots="",labs="",ticks="",bandpol="";
-  if(band){
-    const bo=[],on=[];
-    for(let k=0;k<T.length;k++){ if(band.hi[k]!=null){bo.push(x(k)+","+y(band.hi[k]));on.unshift(x(k)+","+y(band.lo[k]));} }
-    if(bo.length>3){
-      // vlak met een duidelijke stippellijn erlangs, zodat het geen vage vlek is
-      bandpol=`<polyline points="${bo.join(" ")}" fill="none" stroke="${INK25}" stroke-width="0.9" stroke-dasharray="3 3"/>
-        <polyline points="${on.slice().reverse().join(" ")}" fill="none" stroke="${INK25}" stroke-width="0.9" stroke-dasharray="3 3"/>`;
-    }
-  }
+  let bars="",pts=[],dots="",labs="",ticks="";
   T.forEach((v,i)=>{
     if(P[i]>0){
       const hgt=ih*0.42*(P[i]/100);
@@ -888,7 +870,7 @@ function etmaal(start,n){
   const svg=document.getElementById("chart");
   svg.setAttribute("viewBox","0 0 "+W+" "+H);
   svg.innerHTML=
-   `${balk}${gitter}${bandpol}${bars}
+   `${balk}${gitter}${bars}
     <polyline points="${pts.join(" ")}" fill="none" stroke="${INK}" stroke-width="${M?1.2:1.4}" stroke-linejoin="round"/>
     ${dots}${labs}${ticks}${nu}
     <g id="scrub" style="display:none"></g>
@@ -904,9 +886,12 @@ function etmaal(start,n){
   document.getElementById("chartlab").textContent = dg==null ? (S.bereik===24?"De komende 24 uur":S.bereik===48?"De komende 48 uur":"De komende zeven dagen")
     : new Date(S.d.daily.time[dg]+"T12:00:00").toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+", per uur";
   const di=dg==null?0:dg;
+  const voorvoegsel = dg==null ? "vandaag: " : "";
   document.getElementById("suntimes").innerHTML=(day.sunrise[di]&&day.sunset[di])
-    ? (dg==null?"vandaag: ":"")+"zonsopkomst "+hhmm(day.sunrise[di])+" · zonsondergang "+hhmm(day.sunset[di])+" · "+daglengte(di)
-    : daglengte(di);
+    ? "<span>"+voorvoegsel+"zonsopkomst "+hhmm(day.sunrise[di])+"</span>"
+     +"<span>zonsondergang "+hhmm(day.sunset[di])+"</span>"
+     +"<span>"+daglengte(di)+"</span>"
+    : "<span>"+daglengte(di)+"</span>";
   document.getElementById("back").style.display=dg==null?"none":"inline-block";
 }
 

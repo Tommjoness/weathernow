@@ -151,6 +151,27 @@ for(const [naam,n,br] of [["24 uur op de desktop",24,1280],["48 uur op de deskto
   check(naam+": aslabels overlappen niet",botsing===0,botsing+" botsingen bij "+as.length+" labels");
 }
 
+/* 7d. labels boven de dagbalk mogen nooit buiten de tekening vallen */
+groep("Zonlabels");
+for(const [naam,uur,br] of [["vlak voor zonsondergang","20:00",390],["vlak voor zonsopkomst","04:00",390],
+                            ["midden op de dag","13:00",1280]]){
+  const {api,bak}=laadKern(br);
+  const d=bouw({});
+  d.current.time="2026-07-22T"+uur;
+  Object.assign(api.S,{d:d,op:Date.now(),lat:52.35,lon:5.26,label:"T",dag:null,bereik:24});
+  api.S.i0=d.hourly.time.findIndex(t=>t.slice(0,13)===d.current.time.slice(0,13));
+  api.etmaal(api.S.i0,24);
+  const h=bak.chart.innerHTML, W=+bak.chart.getAttribute("viewBox").split(" ")[2];
+  const labels=[...h.matchAll(/<text x="(-?[\d.]+)"[^>]*text-anchor="(\w+)"[^>]*font-size="([\d.]+)">((?:op|onder) \d\d:\d\d)</g)];
+  const buiten=labels.filter(m=>{
+    const breed=m[4].length*(+m[3])*0.62;
+    const links=m[2]==="end"? +m[1]-breed : +m[1];
+    return links<-1 || links+breed>W+1;
+  });
+  check(naam+": zonlabels blijven binnen de tekening",buiten.length===0,
+    buiten.map(m=>m[4]).join(", "));
+}
+
 /* 8. tabellen */
 groep("Tabellen");
 {
@@ -251,6 +272,22 @@ groep("Eenheden");
   check("pagina kan niet zijwaarts schuiven",/overflow-x:clip/.test(stijl));
   check("knoppenbalk krijgt de schermbreedte op de telefoon",/\.mastright\{[^}]*width:100%/.test(stijl));
   check("knoppenbalk breekt af op smalle schermen",/max-width:430px\)\{[\s\S]*?flex-wrap:wrap/.test(stijl));
+  check("waarneemvenster blijft zichtbaar op de telefoon",/\.night \.nmeta\.wide\{display:block/.test(stijl));
+  check("kopregel van de tabellen krijgt ruimte tussen de lijnen",/\.row\.kop\{[^}]*padding:1[0-9]px/.test(stijl));
+}
+
+/* 9b. zonstijden staan onder elkaar */
+groep("Zonstijden");
+{
+  const {api,bak}=laadKern(390);
+  Object.assign(api.S,{d:bouw({}),op:Date.now(),lat:52.35,lon:5.26,label:"T",dag:null,bereik:24});
+  api.S.i0=api.S.d.hourly.time.findIndex(t=>t.slice(0,13)===api.S.d.current.time.slice(0,13));
+  api.etmaal(api.S.i0,24);
+  const regels=[...bak.suntimes.innerHTML.matchAll(/<span>([^<]*)<\/span>/g)].map(m=>m[1]);
+  check("drie losse regels",regels.length===3,regels.join(" | "));
+  check("eerste regel is de opkomst",/zonsopkomst \d\d:\d\d/.test(regels[0]),regels[0]);
+  check("tweede regel is de ondergang",/zonsondergang \d\d:\d\d/.test(regels[1]),regels[1]);
+  check("derde regel is de daglengte",/daglicht/.test(regels[2]),regels[2]);
 }
 
 /* 9. opmaak: variabelen die gebruikt worden moeten ook bestaan */
