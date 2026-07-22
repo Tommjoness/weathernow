@@ -35,6 +35,7 @@
     --serif:'Bodoni Moda',Georgia,'Times New Roman',serif;
     --sans:'Instrument Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
     --mono:'DM Mono',ui-monospace,'SFMono-Regular',monospace;
+    --s1:8px; --s2:16px; --s3:24px; --s4:40px;
   }
   html[data-thema="donker"]{
     --paper:#0B120F; --sheet:#111A16; --ink:#E3EAE6; --ink-70:#B2BEB8; --ink-45:#93A09A;
@@ -154,6 +155,13 @@
   /* radar */
   .radar{margin-top:var(--s2)}
   #radar{width:100%;height:auto;display:block;border:1px solid var(--rule);background:var(--rule-soft)}
+  #radartijd{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:center;
+    font-size:21px;letter-spacing:.04em;margin:14px 0 10px;line-height:1.2}
+  #radartijd small{display:block;font-family:var(--sans);font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;margin-top:3px;color:var(--ink-45)}
+  #radartijd.straks{color:var(--carmine)}
+  #radartijd.straks small{color:var(--carmine)}
+  .mid{text-align:center}
   .radarbalk{display:flex;align-items:center;gap:12px;margin-top:10px}
   .radarbalk button{min-width:96px}
   input[type=range]{flex:1;accent-color:var(--ink);height:20px;background:transparent}
@@ -174,25 +182,27 @@
   .dname{font-size:14.5px;letter-spacing:.01em;white-space:nowrap}
   .row.kop{border-bottom:1px solid var(--ink);padding:0 0 7px;cursor:default}
   .row.kop:hover{background:none}
+  .row.kop .dmin,.row.kop .dmax,.row.kop .drain,.row.kop .dwind,.row.kop .nmeta,.row.kop .score{text-align:center}
   .row.kop>*{font-family:var(--sans)!important;font-weight:500!important;font-size:9.5px!important;
     letter-spacing:.12em;text-transform:uppercase;color:var(--ink-25)!important;white-space:nowrap}
   .row.kop .bar,.row.kop .sbar{background:none}
   .dcond{color:var(--ink-45);font-size:13.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .dmin,.dmax{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
-  .dmin{color:var(--ink-45);text-align:right}
-  .dwind{font-family:var(--mono);font-size:12.5px;color:var(--ink-45);white-space:nowrap}
-  .drain{font-family:var(--mono);font-size:12.5px;color:var(--teal);text-align:right;font-variant-numeric:tabular-nums}
+  .dmin{color:var(--ink-45);text-align:center}
+  .dwind{font-family:var(--mono);font-size:12.5px;color:var(--ink-45);white-space:nowrap;text-align:center}
+  .dwind svg{display:inline-block;vertical-align:-1px}
+  .drain{font-family:var(--mono);font-size:12.5px;color:var(--teal);text-align:center;font-variant-numeric:tabular-nums}
   .bar{height:1px;background:var(--rule);position:relative}
   .bar i{position:absolute;top:-1px;height:3px;background:var(--ink)}
   .ico{color:var(--ink-70)}
 
   .night{grid-template-columns:104px 52px minmax(40px,1fr) 104px max-content;gap:16px}
   .ctrl{grid-template-columns:120px 1fr 1fr max-content;gap:14px}
-  .ctrl .mono{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-70)}
-  .score{font-family:var(--mono);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
+  .ctrl .mono{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-70);text-align:center}
+  .score{font-family:var(--mono);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums;text-align:center}
   .sbar{height:1px;background:var(--rule);position:relative}
   .sbar i{position:absolute;top:-1px;height:3px}
-  .nmeta{font-size:12.5px;color:var(--ink-45);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .nmeta{font-size:12.5px;color:var(--ink-45);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
 
   .msg{padding:var(--s2) 0;color:var(--ink-45);border-top:1px solid var(--rule);margin-top:var(--s3)}
   .msg.err{color:var(--carmine);border-color:var(--carmine)}
@@ -301,14 +311,15 @@
            aria-label="Dag- en nachtverloop met temperatuur, spreiding en neerslagkans"></svg>
     </div>
 
-    <h2><span>Neerslagradar</span><span class="r" id="radartijd"></span></h2>
+    <h2><span>Neerslagradar</span></h2>
     <div class="radar">
       <canvas id="radar" width="640" height="380" aria-label="Neerslagradar rond je locatie"></canvas>
+      <div id="radartijd"></div>
       <div class="radarbalk">
         <button id="rspeel" title="Afspelen of pauzeren">Speel af</button>
         <input type="range" id="rschuif" min="0" max="0" value="0" step="1" aria-label="Tijdstip van het radarbeeld">
       </div>
-      <div class="ssub" id="radarmelding"></div>
+      <div class="ssub mid" id="radarmelding"></div>
     </div>
 
     <h2><span>Neerslag komende twee uur</span></h2>
@@ -988,7 +999,7 @@ function nachten(){
     const a2=idx[ss.slice(0,13)+":00"],b2=idx[sr2.slice(0,13)+":00"];
     if(a2==null||b2==null||b2<=a2) continue;
     const C=[],HU=[],SP=[],GU=[],TT=[];
-    for(let i=a2+1;i<b2;i++){
+    for(let i=a2;i<=b2;i++){
       if(h.cloud_cover[i]==null) continue;
       C.push(h.cloud_cover[i]);HU.push(h.relative_humidity_2m[i]);
       SP.push(h.temperature_2m[i]-h.dew_point_2m[i]);GU.push(h.wind_gusts_10m[i]);TT.push(h.time[i]);
@@ -1016,7 +1027,11 @@ function nachten(){
       const goed = C[i]<35 && (!maanOp[i] || mn.ill<0.25);
       if(goed){ if(run===0) bs=i; run++; if(run>br){br=run;bstart=bs;} } else run=0;
     }
-    const venster=br>=2?"donker en helder van "+TT[bstart].slice(11,16)+" tot "+TT[Math.min(bstart+br,TT.length-1)].slice(11,16):null;
+    let venster=null;
+    if(br>=2&&bstart>=0){
+      const eind = (bstart+br<TT.length) ? TT[bstart+br].slice(11,16) : hhmm(sr2);
+      venster="donker en helder van "+TT[bstart].slice(11,16)+" tot "+eind;
+    }
 
     // maantijden voor deze nacht
     const mt=opOnder("maan",naarUTC(ss.slice(0,10)+"T12:00"),S.lat,S.lon);
@@ -1168,8 +1183,9 @@ function radarTeken(){
       });
     });
   }
-  const lok=naarLokaal(f.time*1000);
-  document.getElementById("radartijd").textContent=(f.toekomst?"verwacht ":"")+lok;
+  const el2=document.getElementById("radartijd");
+  el2.className=f.toekomst?"straks":"";
+  el2.innerHTML=naarLokaal(f.time*1000)+"<small>"+(f.toekomst?"verwachting":"gemeten")+"</small>";
 }
 function markeer(ctx,W,H){
   ctx.save();
