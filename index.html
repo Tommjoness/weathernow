@@ -66,6 +66,7 @@
   button:hover{border-color:var(--ink);color:var(--ink)}
   button:focus-visible{outline:1px solid var(--ink);outline-offset:2px}
   button:disabled{color:var(--ink-25);border-color:var(--rule);cursor:default}
+  .tools button{white-space:nowrap}
   .tools button+button{border-left:none}
   #stamp{font-family:var(--mono);font-size:11px;color:var(--ink-45);font-variant-numeric:tabular-nums}
   #stamp.oud{color:var(--carmine)}
@@ -106,6 +107,7 @@
 
   /* statstabel */
   .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);margin-top:20px}
+  #aq{border-top:none;margin-top:0}
   .stat{padding:15px 22px 17px 0;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule)}
   .stat:nth-child(4n){border-right:none;padding-right:0}
   .stat:not(:nth-child(4n+1)){padding-left:22px}
@@ -164,7 +166,12 @@
     body{padding:14px 12px}
     .sheet{padding:26px 20px 28px}
     #place{font-size:34px}
-    #t{font-size:104px}
+    #t{font-size:96px}
+    .hero{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"temp temp" "ico info";
+          align-items:center;gap:10px 14px;margin:20px 0 4px}
+    .tempblok{grid-area:temp}
+    #nowicon{grid-area:ico;padding:0}
+    .heroinfo{grid-area:info;padding:0}
     .stats{grid-template-columns:repeat(2,1fr)}
     .stat:nth-child(4n){border-right:1px solid var(--rule);padding-right:22px}
     .stat:nth-child(2n){border-right:none;padding-right:0}
@@ -175,7 +182,9 @@
     .dcond{display:none}
     .night{grid-template-columns:70px 40px minmax(20px,1fr) max-content;gap:9px}
     .nmeta.wide{display:none}
-    input[type=text]{width:136px}
+    .tools{width:100%}
+    input[type=text]{flex:1;min-width:0;width:auto}
+    .tools button{font-size:9.5px;padding:7px 9px;letter-spacing:.08em}
     .mast{gap:14px}
     .mastright{align-items:flex-start;text-align:left}
   }
@@ -601,13 +610,18 @@ function etmaal(start,n){
     const i=start+k;if(i>=h.time.length)break;
     TI.push(h.time[i]);T.push(h.temperature_2m[i]);A.push(h.apparent_temperature[i]);
     P.push(h.precipitation_probability[i]??0);L.push(h.time[i].slice(11,13));
-    W_.push(h.wind_speed_10m[i]);G.push(h.wind_gusts_10m[i]);C.push(h.cloud_cover[i]);WD.push(h.wind_direction_10m[i]);
-    D.push(h.weather_code[i]);ND.push(h.is_day[i]);
+    W_.push(h.wind_speed_10m[i]);G.push(h.wind_gusts_10m[i]);C.push(h.cloud_cover[i]);
+    D.push(h.weather_code[i]);ND.push(h.is_day[i]);WD.push(h.wind_direction_10m[i]);
   }
   const band=ensBand(TI);
-  const W=900,pl=44,pr=20,iw=W-pl-pr;
-  const by=22,bh=16;                 // dagbalk
-  const pt=76,ih=160,pb=pt+ih;       // grafiek
+  const M=(typeof window!=="undefined"&&window.innerWidth)?window.innerWidth<760:false;
+
+  const W=M?520:900, H=M?252:296, pl=M?30:44, pr=M?10:20, iw=W-pl-pr;
+  const by=M?20:22, bh=M?12:16;
+  const pt=M?64:76, ih=M?132:160, pb=pt+ih;
+  const F={zon:M?9:10.5, nu:M?9:10, temp:M?12:15, uur:M?9.5:10.5, pre:M?8.5:9.5, grid:M?9:10.5};
+  const stap=M?4:3;
+
   let mn=Math.min(...T),mx=Math.max(...T);
   if(band){band.lo.forEach(v=>{if(v!=null)mn=Math.min(mn,v);});band.hi.forEach(v=>{if(v!=null)mx=Math.max(mx,v);});}
   mn=Math.floor(mn-1);mx=Math.ceil(mx+1);
@@ -615,40 +629,38 @@ function etmaal(start,n){
   const cw=iw/(T.length-1);
   const x=i=>pl+cw*i, y=v=>pt+ih*(1-(v-mn)/span);
 
-  /* dagbalk: nachtblokken uit is_day, plus op- en ondergang */
+  /* dagbalk */
   let balk=`<rect x="${pl-cw/2}" y="${by}" width="${iw+cw}" height="${bh}" fill="none" stroke="${RULE}" stroke-width="1"/>`;
-  let s=-1;
+  let s0=-1;
   for(let k=0;k<=ND.length;k++){
     const nacht=k<ND.length&&ND[k]===0;
-    if(nacht&&s<0) s=k;
-    if((!nacht||k===ND.length)&&s>=0){
-      const x1=x(s)-cw/2,x2=x(k-1)+cw/2;
-      balk+=`<rect x="${x1}" y="${by}" width="${x2-x1}" height="${bh}" fill="${NIGHT}"/>`;s=-1;
+    if(nacht&&s0<0) s0=k;
+    if((!nacht||k===ND.length)&&s0>=0){
+      const x1=x(s0)-cw/2,x2=x(k-1)+cw/2;
+      balk+=`<rect x="${x1}" y="${by}" width="${x2-x1}" height="${bh}" fill="${NIGHT}"/>`;s0=-1;
     }
   }
   const grens=[];
   for(let k=1;k<ND.length;k++){ if(ND[k]!==ND[k-1]) grens.push({i:k,op:ND[k]===1}); }
   const day=S.d.daily;
   grens.forEach(g=>{
-    const dagStr=TI[g.i].slice(0,10),di=day.time.indexOf(dagStr);
+    const dagStr=TI[g.i].slice(0,10),di2=day.time.indexOf(dagStr);
     let tijd=null;
-    if(di>=0) tijd=g.op?day.sunrise[di]:day.sunset[di];
+    if(di2>=0) tijd=g.op?day.sunrise[di2]:day.sunset[di2];
     const xx=x(g.i)-cw/2;
-    balk+=`<line x1="${xx}" y1="${by-6}" x2="${xx}" y2="${by+bh+4}" stroke="${INK}" stroke-width="1"/>`;
-    if(tijd) balk+=`<text x="${xx+(g.op?4:-4)}" y="${by-10}" text-anchor="${g.op?"start":"end"}" fill="${INK45}"
-      font-family="DM Mono,monospace" font-size="10.5">${g.op?"zonsopkomst ":"zonsondergang "}${hhmm(tijd)}</text>`;
+    balk+=`<line x1="${xx}" y1="${by-5}" x2="${xx}" y2="${by+bh+4}" stroke="${INK}" stroke-width="1"/>`;
+    if(tijd) balk+=`<text x="${xx+(g.op?4:-4)}" y="${by-9}" text-anchor="${g.op?"start":"end"}" fill="${INK45}"
+      font-family="DM Mono,monospace" font-size="${F.zon}">${g.op?"op ":"onder "}${hhmm(tijd)}</text>`;
   });
 
-  /* nu-markering */
   let nu="";
   const inu=TI.indexOf(S.d.current.time.slice(0,13)+":00");
   if(inu>=0){
     const xn=x(inu);
     nu=`<line x1="${xn}" y1="${by-2}" x2="${xn}" y2="${pb+6}" stroke="${CARMINE}" stroke-width="1"/>
-        <text x="${xn+5}" y="${by+bh+16}" fill="${CARMINE}" font-family="DM Mono,monospace" font-size="10">nu</text>`;
+        <text x="${xn+4}" y="${by+bh+13}" fill="${CARMINE}" font-family="DM Mono,monospace" font-size="${F.nu}">nu</text>`;
   }
 
-  /* grafiek */
   let bars="",pts=[],dots="",labs="",ticks="",bandpol="";
   if(band){
     const bo=[],on=[];
@@ -661,28 +673,30 @@ function etmaal(start,n){
       bars+=`<rect x="${x(i)-cw*0.3}" y="${pb-hgt}" width="${cw*0.6}" height="${hgt}" fill="${TEAL}" fill-opacity=".16"/>`;
     }
     pts.push(x(i)+","+y(v));
-    if(i%3===0){
-      dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="2.2" fill="${INK}"/>`;
-      labs+=`<text x="${x(i)+(i===0?13:0)}" y="${y(v)-11}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="15">${Math.round(v)}°</text>`;
-      ticks+=`<text x="${x(i)}" y="${pb+22}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="10.5">${L[i]}</text>`;
-      if(P[i]>0) ticks+=`<text x="${x(i)}" y="${pb+37}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="9.5">${P[i]}%</text>`;
+    if(i%stap===0){
+      dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="${M?1.9:2.2}" fill="${INK}"/>`;
+      labs+=`<text x="${x(i)+(i===0?(M?11:13):0)}" y="${y(v)-(M?9:11)}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="${F.temp}">${Math.round(v)}°</text>`;
+      ticks+=`<text x="${x(i)}" y="${pb+(M?18:22)}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="${F.uur}">${L[i]}</text>`;
+      if(P[i]>0) ticks+=`<text x="${x(i)}" y="${pb+(M?31:37)}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="${F.pre}">${P[i]}%</text>`;
     }
   });
   const gitter=[mx,Math.round((mn+mx)/2),mn].map((v,k)=>
-    `<line x1="${pl-8}" y1="${y(v)}" x2="${W-pr}" y2="${y(v)}" stroke="${k===2?RULE:RULES}" stroke-width="1"/>
-     <text x="0" y="${y(v)+4}" fill="${INK25}" font-family="DM Mono,monospace" font-size="10.5">${v}°</text>`).join("");
+    `<line x1="${pl-6}" y1="${y(v)}" x2="${W-pr}" y2="${y(v)}" stroke="${k===2?RULE:RULES}" stroke-width="1"/>
+     <text x="0" y="${y(v)+3.5}" fill="${INK25}" font-family="DM Mono,monospace" font-size="${F.grid}">${v}°</text>`).join("");
 
-  document.getElementById("chart").innerHTML=
+  const svg=document.getElementById("chart");
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);
+  svg.innerHTML=
    `${balk}${gitter}${bandpol}${bars}
-    <polyline points="${pts.join(" ")}" fill="none" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+    <polyline points="${pts.join(" ")}" fill="none" stroke="${INK}" stroke-width="${M?1.2:1.4}" stroke-linejoin="round"/>
     ${dots}${labs}${ticks}${nu}
     <g id="scrub" style="display:none"></g>
     <rect id="hit" x="${pl-cw/2}" y="${pt-14}" width="${iw+cw}" height="${ih+20}" fill="transparent" style="cursor:crosshair"/>`;
 
-  document.getElementById("chart").setAttribute("aria-label",
+  svg.setAttribute("aria-label",
     "Verloop van "+TI[0].slice(11,16)+" tot "+TI[TI.length-1].slice(11,16)
     +", temperatuur tussen "+mn+" en "+mx+" graden, hoogste neerslagkans "+Math.max.apply(null,P)+" procent.");
-  S.geo={x:x,y:y,pl:pl,pt:pt,ih:ih,cw:cw,n:T.length,T:T,A:A,P:P,W_:W_,G:G,C:C,D:D,TI:TI,WD:WD};
+  S.geo={x:x,y:y,pl:pl,pt:pt,ih:ih,cw:cw,n:T.length,T:T,A:A,P:P,W_:W_,G:G,C:C,D:D,TI:TI,WD:WD,W:W,M:M};
   scrubKoppel();
 
   const dg=S.dag;
@@ -694,6 +708,7 @@ function etmaal(start,n){
     : daglengte(di);
   document.getElementById("back").style.display=dg==null?"none":"inline-block";
 }
+
 function daglengte(i){
   const sr=S.d.daily.sunrise[i],ss=S.d.daily.sunset[i];
   if(!sr||!ss) return "zon komt niet onder of niet op";
@@ -706,12 +721,12 @@ function scrubKoppel(){
   const svg=document.getElementById("chart"),hit=document.getElementById("hit"),g=document.getElementById("scrub");
   if(!hit) return;
   const toon=ev=>{
-    const r=svg.getBoundingClientRect(),sc=900/r.width;
+    const r=svg.getBoundingClientRect(),sc=(S.geo.W||900)/r.width;
     const G=S.geo;
     let i=Math.round(((ev.clientX-r.left)*sc-G.pl)/G.cw);
     i=clamp(i,0,G.n-1);
     const X=G.x(i),Y=G.y(G.T[i]);
-    const links=X>640,bw=196,bx=links?X-bw-12:X+12,by=G.pt-6;
+    const bw=G.M?168:196,links=X>(G.W*0.62),bx=links?X-bw-10:X+10,by=G.pt-6;
     let n=0;
     const rij=(l,v,c)=>{n++;const yy=by+18+n*16;
       return `<text x="${bx+11}" y="${yy}" fill="${INK45}" font-family="Instrument Sans,sans-serif" font-size="11">${l}</text>`
@@ -744,15 +759,18 @@ function nowcast(){
   if(i<0)i=0;
   const T=[],P=[];
   for(let k=0;k<8;k++){const q=i+k;if(q>=m.time.length)break;T.push(m.time[q]);P.push(m.precipitation[q]??0);}
-  const mx=Math.max(0.5,...P),W=900,pl=44,pr=20,iw=W-pl-pr,base=40,hmax=32,cw=iw/T.length;
+  const M=(typeof window!=="undefined"&&window.innerWidth)?window.innerWidth<760:false;
+  const mx=Math.max(0.5,...P),W=M?520:900,pl=M?30:44,pr=M?10:20,iw=W-pl-pr,
+        base=M?36:40,hmax=M?28:32,cw=iw/T.length;
+  el.setAttribute("viewBox","0 0 "+W+" "+(M?56:60));
   let out=`<line x1="${pl}" y1="${base}" x2="${W-pr}" y2="${base}" stroke="${RULE}"/>`;
   T.forEach((t,k)=>{
     const x=pl+k*cw,hh=hmax*(P[k]/mx);
     if(P[k]>0) out+=`<rect x="${x+3}" y="${base-hh}" width="${cw-6}" height="${hh}" fill="${TEAL}" fill-opacity=".2"/>
                      <line x1="${x+3}" y1="${base-hh}" x2="${x+cw-3}" y2="${base-hh}" stroke="${TEAL}" stroke-width="1.2"/>`;
     out+=`<line x1="${x}" y1="${base}" x2="${x}" y2="${base+4}" stroke="${RULE}"/>`;
-    if(k%2===0) out+=`<text x="${x+cw/2}" y="${base+18}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="10.5">${t.slice(11,16)}</text>`;
-    if(P[k]>0) out+=`<text x="${x+cw/2}" y="${base-hh-6}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="10">${nl(P[k])}</text>`;
+    if(k%2===0) out+=`<text x="${x+cw/2}" y="${base+18}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="${M?9:10.5}">${t.slice(11,16)}</text>`;
+    if(P[k]>0) out+=`<text x="${x+cw/2}" y="${base-hh-6}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="${M?9:10}">${nl(P[k])}</text>`;
   });
   el.innerHTML=out;
   const eerste=P.findIndex(v=>v>=0.1),som=P.reduce((a,b)=>a+b,0);
@@ -1003,6 +1021,23 @@ document.getElementById("here").addEventListener("click",()=>{
   if(v&&v.lat!=null){q.value=v.label;load(v.lat,v.lon,v.label);return;}
   q.value="Almere";load(52.3508,5.2647,"Almere");
 })();
+
+// bij draaien of vergroten opnieuw tekenen, want de grafiek heeft een eigen maat per schermbreedte
+let hertekenTimer=null,laatsteBreedte=window.innerWidth;
+window.addEventListener("resize",()=>{
+  if(Math.abs(window.innerWidth-laatsteBreedte)<40) return;
+  laatsteBreedte=window.innerWidth;
+  clearTimeout(hertekenTimer);
+  hertekenTimer=setTimeout(()=>{
+    if(!S.d) return;
+    let st=S.i0;
+    if(S.dag!=null){
+      const k=S.d.hourly.time.findIndex(t=>t.slice(0,10)===S.d.daily.time[S.dag]);
+      if(k>=0) st=k;
+    }
+    etmaal(st,24);nowcast();
+  },250);
+});
 
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
