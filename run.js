@@ -80,6 +80,27 @@ groep("Meters");
   check("elke meter heeft een zin die eindigt op een punt",teksten.every(t=>/\.$/.test(t)),teksten.find(t=>!/\.$/.test(t)));
   check("geen punt als decimaalteken",teksten.every(t=>!/\d\.\d/.test(t)),teksten.find(t=>/\d\.\d/.test(t)));
   check("windrichting voluit",/noordwesten/.test(bak.windsub.textContent),bak.windsub.textContent);
+  // de briefing en de meter mogen niet twee verschillende richtingen noemen
+  const richtingen=["noorden","noordnoordoosten","noordoosten","oostnoordoosten","oosten","oostzuidoosten",
+    "zuidoosten","zuidzuidoosten","zuiden","zuidzuidwesten","zuidwesten","westzuidwesten","westen",
+    "westnoordwesten","noordwesten","noordnoordwesten"];
+  const uitZin=t=>richtingen.filter(r=>new RegExp("uit het "+r+"\\b").test(t))[0];
+  const {bak:b2}=brief({});
+  const brf=b2.brief.innerHTML.replace(/<[^>]+>/g,"");
+  check("briefing en windmeter noemen dezelfde richting",
+    uitZin(brf)===uitZin(b2.windsub.textContent),
+    "briefing: "+uitZin(brf)+", meter: "+uitZin(b2.windsub.textContent));
+  // wind die draait wordt als draaiing beschreven, niet als andere beginrichting
+  const {api:a3,bak:b3}=laadKern(1280);
+  const d3=bouw({});
+  const i3=d3.hourly.time.findIndex(t=>t.slice(0,13)===d3.current.time.slice(0,13));
+  d3.hourly.wind_direction_10m=d3.hourly.wind_direction_10m.map((v,i)=>i>i3+2?200:315);
+  d3.hourly.wind_speed_10m=d3.hourly.wind_speed_10m.map((v,i)=>i===i3+5?34:v);
+  Object.assign(a3.S,{d:d3,op:Date.now(),lat:52.35,lon:5.26,label:"T",dag:null,bereik:24,i0:i3});
+  a3.meters();a3.briefing();
+  const t3=b3.brief.innerHTML.replace(/<[^>]+>/g,"");
+  check("draaiende wind wordt als draaiing benoemd",/draaiend naar het zuidzuidwesten/.test(t3),t3);
+  check("draaiende wind begint bij de huidige richting",uitZin(t3)==="noordwesten",uitZin(t3));
 }
 
 /* 6. randgevallen */

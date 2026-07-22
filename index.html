@@ -739,10 +739,16 @@ function briefing(){
     if((h.wind_speed_10m[k]||0)>wmax){wmax=h.wind_speed_10m[k];wi=k;}
     if((h.wind_gusts_10m[k]||0)>gmax){gmax=h.wind_gusts_10m[k];gi=k;}
   }
-  const bm=bft(wmax),bnu=bft(c.wind_speed_10m),richting=kompas(h.wind_direction_10m[wi]||0);
-  let zin3 = bm>bnu ? "De wind komt uit het "+richting+" en neemt toe tot "+bm+" Bft"
-           : bm<bnu ? "De wind komt uit het "+richting+" en neemt af tot "+bm+" Bft"
-           : "De wind blijft "+BFTBIJV[bm]+" uit het "+richting+" ("+bm+" Bft)";
+  const bm=bft(wmax),bnu=bft(c.wind_speed_10m);
+  const rNu=c.wind_direction_10m, rPiek=h.wind_direction_10m[wi];
+  const richtingNu=kompas(rNu);
+  // draait de wind meer dan twee kompaspunten, dan is dat het vermelden waard
+  let hoek=Math.abs(((rPiek-rNu+540)%360)-180);
+  const draait = rPiek!=null && hoek>45;
+  const draaiTekst = draait ? ", draaiend naar het "+kompas(rPiek) : "";
+  let zin3 = bm>bnu ? "De wind komt uit het "+richtingNu+draaiTekst+" en neemt toe tot "+bm+" Bft"
+           : bm<bnu ? "De wind komt uit het "+richtingNu+draaiTekst+" en neemt af tot "+bm+" Bft"
+           : "De wind blijft "+BFTBIJV[bm]+" uit het "+richtingNu+" ("+bm+" Bft)"+draaiTekst;
   zin3 += (wi>i+1) ? ", rond "+hhmm(h.time[wi])+" is de wind het sterkst" : "";
   zin3 += gmax>=60 ? ", met stoten tot "+Math.round(gmax)+" km/u." : ".";
 
