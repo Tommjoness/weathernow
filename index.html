@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Weerbriefing</title>
 <meta name="description" content="Weersverwachting met kwartierneerslag, spreidingsband, luchtkwaliteit en nachtzicht.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://tilecache.rainviewer.com https://basemaps.cartocdn.com; connect-src 'self' https://api.rainviewer.com https://api.open-meteo.com https://ensemble-api.open-meteo.com https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.bigdatacloud.net; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F4F5F3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Weerbriefing">
@@ -24,8 +25,8 @@
     --sheet:#FFFFFF;
     --ink:#12211C;
     --ink-70:#41514B;
-    --ink-45:#77837E;
-    --ink-25:#A9B2AE;
+    --ink-45:#65716C;
+    --ink-25:#68746F;
     --rule:#DCE1DE;
     --rule-soft:#EDEFED;
     --night:#E6EAE7;
@@ -35,15 +36,25 @@
     --sans:'Instrument Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
     --mono:'DM Mono',ui-monospace,'SFMono-Regular',monospace;
   }
+  html[data-thema="donker"]{
+    --paper:#0B120F; --sheet:#111A16; --ink:#E3EAE6; --ink-70:#B2BEB8; --ink-45:#93A09A;
+    --ink-25:#7F8C86; --rule:#24312B; --rule-soft:#1A241F; --night:#1B2620;
+    --teal:#63C9BF; --carmine:#E4707E;
+  }
+  html[data-thema="rood"]{
+    --paper:#080202; --sheet:#0D0303; --ink:#D24A3C; --ink-70:#B23E32; --ink-45:#97352B;
+    --ink-25:#8A3128; --rule:#3A1611; --rule-soft:#26100C; --night:#1B0908;
+    --teal:#D24A3C; --carmine:#F06A5A;
+  }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
     background:var(--paper);color:var(--ink);
     font-family:var(--sans);font-size:15px;line-height:1.5;
-    padding:34px 22px calc(34px + env(safe-area-inset-bottom));
+    padding:32px 22px calc(32px + env(safe-area-inset-bottom));
     -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;
   }
-  .sheet{max-width:1180px;margin:0 auto;background:var(--sheet);border:1px solid var(--rule);padding:44px 48px 40px}
+  .sheet{max-width:1180px;margin:0 auto;background:var(--sheet);border:1px solid var(--rule);padding:40px 48px 32px}
   .num{font-variant-numeric:tabular-nums}
 
   .eyebrow{font-family:var(--sans);font-weight:500;font-size:10.5px;letter-spacing:.14em;
@@ -51,7 +62,15 @@
   .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
   /* masthead */
-  .mast{display:flex;justify-content:space-between;align-items:flex-start;gap:28px;flex-wrap:wrap}
+  #minibar{display:none}
+  @media(max-width:900px){
+    #minibar{position:sticky;top:0;z-index:25;background:var(--sheet);border-bottom:1px solid var(--rule);
+      margin:-24px -20px 0;padding:9px 20px;display:none;justify-content:space-between;align-items:baseline;gap:12px}
+    #minibar.aan{display:flex}
+    #miniplaats{font-family:var(--serif);font-size:17px}
+    #minitemp{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums}
+  }
+  .mast{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s3);flex-wrap:wrap}
   .mast h1{font-family:var(--serif);font-weight:400;font-size:15px;letter-spacing:.02em;margin:0;color:var(--ink-45)}
   #place{font-family:var(--serif);font-weight:400;font-size:44px;line-height:1.05;margin:4px 0 0;letter-spacing:-.01em}
   .mastright{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:9px}
@@ -77,7 +96,7 @@
   .results div:last-child{border-bottom:none}
   .results div:hover{background:var(--paper)}
 
-  .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:18px 0 0}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:var(--s2) 0 0}
   .chips .kop{font-family:var(--sans);font-weight:500;font-size:10.5px;letter-spacing:.14em;
               text-transform:uppercase;color:var(--ink-25);margin-right:4px}
   .chip{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-70);
@@ -90,12 +109,12 @@
   .chip.add:hover{border-style:solid}
 
   /* lede */
-  .brief{font-size:20px;line-height:1.45;color:var(--ink);max-width:66ch;margin:30px 0 0;
-         padding-top:22px;border-top:1px solid var(--ink)}
+  .brief{font-size:20px;line-height:1.5;color:var(--ink);max-width:66ch;margin:var(--s3) 0 0;
+         padding-top:var(--s3);border-top:1px solid var(--ink)}
   .brief b{font-weight:500}
 
   /* hero */
-  .hero{display:flex;align-items:flex-end;gap:34px;flex-wrap:wrap;margin:26px 0 6px}
+  .hero{display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;margin:var(--s3) 0 0}
   .tempblok{display:flex;align-items:flex-start;gap:4px}
   #t{font-family:var(--serif);font-weight:400;font-size:132px;line-height:.78;letter-spacing:-.03em;
      font-variant-numeric:tabular-nums}
@@ -106,9 +125,9 @@
   #nowicon{padding-bottom:10px;color:var(--ink-70)}
 
   /* statstabel */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);margin-top:20px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);margin-top:var(--s3)}
   #aq{border-top:none;margin-top:0}
-  .stat{padding:15px 22px 17px 0;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule)}
+  .stat{padding:var(--s2) 22px 18px 0;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule)}
   .stat:nth-child(4n){border-right:none;padding-right:0}
   .stat:not(:nth-child(4n+1)){padding-left:22px}
   .sval{font-family:var(--mono);font-weight:500;font-size:23px;margin-top:6px;line-height:1.1;
@@ -118,21 +137,37 @@
 
   /* sectiekop */
   h2{font-family:var(--sans);font-weight:500;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
-     color:var(--ink-25);margin:44px 0 0;padding-bottom:10px;border-bottom:1px solid var(--ink);
+     color:var(--ink-25);margin:var(--s4) 0 0;padding-bottom:10px;border-bottom:1px solid var(--ink);
      display:flex;justify-content:space-between;align-items:flex-end;gap:10px 16px;flex-wrap:wrap}
   h2 .r #moonlab{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
   h2 .r{font-family:var(--mono);letter-spacing:0;text-transform:none;font-size:11.5px;color:var(--ink-45);
         display:flex;gap:8px 18px;align-items:center;flex-wrap:wrap}
   h2 button{padding:4px 9px;font-size:9.5px}
+  .bereik{display:inline-flex}
+  .bereik button+button{border-left:none}
+  .bereik button.aan{border-color:var(--ink);color:var(--ink);font-weight:600}
 
   /* dagmodule */
-  .dagmod{padding-top:6px}
-  #nctext{font-size:14.5px;color:var(--ink-70);margin:16px 0 6px}
+  .dagmod{padding-top:var(--s2)}
+  #nctext{font-size:14.5px;color:var(--ink-70);margin:var(--s2) 0 var(--s1)}
+
+  /* radar */
+  .radar{margin-top:var(--s2)}
+  #radar{width:100%;height:auto;display:block;border:1px solid var(--rule);background:var(--rule-soft)}
+  .radarbalk{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .radarbalk button{min-width:96px}
+  input[type=range]{flex:1;accent-color:var(--ink);height:20px;background:transparent}
+  #radartijd{font-variant-numeric:tabular-nums}
+
+  /* waarschuwingen */
+  .waarsch{border-left:3px solid var(--carmine);padding:10px 0 10px 14px;margin-top:var(--s2)}
+  .waarsch h3{font-family:var(--serif);font-weight:400;font-size:18px;margin:0 0 2px;color:var(--carmine)}
+  .waarsch p{margin:0;font-size:14px;color:var(--ink-70)}
 
   /* tabellen */
   .row{display:grid;align-items:center;border-bottom:1px solid var(--rule-soft);padding:11px 0}
   .row:last-child{border-bottom:none}
-  .day{grid-template-columns:106px 26px 1fr 54px 140px 46px 52px;gap:16px;cursor:pointer}
+  .day{grid-template-columns:106px 26px 1fr 72px 54px 128px 46px 52px;gap:14px;cursor:pointer}
   .day:hover{background:#FAFBFA}
   .day.on{box-shadow:inset 2px 0 0 var(--carmine)}
   .day.on .dname{font-weight:500}
@@ -145,29 +180,35 @@
   .dcond{color:var(--ink-45);font-size:13.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .dmin,.dmax{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
   .dmin{color:var(--ink-45);text-align:right}
+  .dwind{font-family:var(--mono);font-size:12.5px;color:var(--ink-45);white-space:nowrap}
   .drain{font-family:var(--mono);font-size:12.5px;color:var(--teal);text-align:right;font-variant-numeric:tabular-nums}
   .bar{height:1px;background:var(--rule);position:relative}
   .bar i{position:absolute;top:-1px;height:3px;background:var(--ink)}
   .ico{color:var(--ink-70)}
 
   .night{grid-template-columns:104px 52px minmax(40px,1fr) 104px max-content;gap:16px}
+  .ctrl{grid-template-columns:120px 1fr 1fr max-content;gap:14px}
+  .ctrl .mono{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-70)}
   .score{font-family:var(--mono);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
   .sbar{height:1px;background:var(--rule);position:relative}
   .sbar i{position:absolute;top:-1px;height:3px}
   .nmeta{font-size:12.5px;color:var(--ink-45);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-  .msg{padding:16px 0;color:var(--ink-45);border-top:1px solid var(--rule);margin-top:24px}
+  .msg{padding:var(--s2) 0;color:var(--ink-45);border-top:1px solid var(--rule);margin-top:var(--s3)}
   .msg.err{color:var(--carmine);border-color:var(--carmine)}
-  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);display:flex;
+  footer{margin-top:var(--s3);padding-top:0;display:flex;
          justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--ink-25)}
   footer .mono{font-size:11.5px}
   svg{display:block;touch-action:pan-y}
 
   @media(max-width:900px){
     body{padding:14px 12px}
-    .sheet{padding:26px 20px 28px}
+    .sheet{padding:24px 20px 24px}
+    :root{--s2:14px; --s3:20px; --s4:30px}
+    .brief{font-size:17.5px;line-height:1.5}
     #place{font-size:34px}
-    #t{font-size:96px}
+    #place{font-size:34px}
+    #t{font-size:86px}
     .hero{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"temp temp" "ico info";
           align-items:start;gap:10px 14px;margin:20px 0 4px}
     .tempblok{grid-area:temp}
@@ -178,10 +219,14 @@
     .stat:nth-child(2n){border-right:none;padding-right:0}
     .stat:not(:nth-child(4n+1)){padding-left:0}
     .stat:nth-child(2n){padding-left:22px}
-    .day{grid-template-columns:88px 22px 1fr 40px 38px 42px;gap:8px}
+    .day{grid-template-columns:84px 22px 1fr 56px 38px 38px 42px;gap:7px}
     .dname{font-size:12.5px}
     .dcond{display:none}
+    .bar{display:none}
     .night{grid-template-columns:70px 40px minmax(20px,1fr) max-content;gap:9px}
+    .ctrl{grid-template-columns:74px 1fr 1fr;gap:8px}
+    .ctrl .nmeta{display:none}
+    .ctrl .mono{font-size:11.5px}
     .nmeta.wide{display:none}
     .tools{width:100%}
     input[type=text]{flex:1;min-width:0;width:auto}
@@ -196,6 +241,8 @@
 <body>
 <div class="sheet">
 
+  <div id="minibar"><span id="miniplaats"></span><span id="minitemp"></span></div>
+
   <div class="mast">
     <div>
       <h1>Weerbriefing</h1>
@@ -206,6 +253,7 @@
         <input type="text" id="q" placeholder="Plaats zoeken" autocomplete="off" aria-label="Plaats zoeken" role="combobox" aria-expanded="false" aria-controls="res">
         <button id="here" title="Gebruik je huidige locatie">Mijn locatie</button>
         <button id="ververs" title="Gegevens opnieuw ophalen">Ververs</button>
+        <button id="thema" title="Wissel tussen licht, donker en rood licht">Auto</button>
         <div class="results" id="res" role="listbox"></div>
       </div>
       <span id="stamp" aria-live="polite"></span>
@@ -219,6 +267,7 @@
   <div id="app" style="display:none">
 
     <p class="brief" id="brief"></p>
+    <div id="waarschuwingen"></div>
 
     <div class="hero">
       <div class="tempblok">
@@ -252,6 +301,16 @@
            aria-label="Dag- en nachtverloop met temperatuur, spreiding en neerslagkans"></svg>
     </div>
 
+    <h2><span>Neerslagradar</span><span class="r" id="radartijd"></span></h2>
+    <div class="radar">
+      <canvas id="radar" width="640" height="380" aria-label="Neerslagradar rond je locatie"></canvas>
+      <div class="radarbalk">
+        <button id="rspeel" title="Afspelen of pauzeren">Speel af</button>
+        <input type="range" id="rschuif" min="0" max="0" value="0" step="1" aria-label="Tijdstip van het radarbeeld">
+      </div>
+      <div class="ssub" id="radarmelding"></div>
+    </div>
+
     <h2><span>Neerslag komende twee uur</span></h2>
     <div id="nctext"></div>
     <svg id="nc" viewBox="0 0 900 60" width="100%" role="img" aria-label="Neerslag per kwartier"></svg>
@@ -261,6 +320,10 @@
 
     <h2><span>Nachtzicht</span><span class="r" id="moonlab"></span></h2>
     <div id="nights"></div>
+
+    <h2 id="kopcontrole" style="display:none"><span>Hoe goed was de verwachting</span>
+      <span class="r">eigen verwachting van de dag ervoor</span></h2>
+    <div id="controle"></div>
 
     <h2><span>Luchtkwaliteit en pollen</span></h2>
     <div class="stats" id="aq"></div>
@@ -278,9 +341,9 @@
 /* ---------- constanten ---------- */
 const CODES={0:["Onbewolkt","zon"],1:["Overwegend zonnig","zon"],2:["Half bewolkt","halfbewolkt"],3:["Bewolkt","wolk"],
  45:["Mist","mist"],48:["Aanvriezende mist","mist"],51:["Lichte motregen","regen"],53:["Motregen","regen"],
- 55:["Zware motregen","regen"],56:["Aanvriezende motregen","regen"],57:["Zware aanvriezende motregen","regen"],
- 61:["Lichte regen","regen"],63:["Regen","regen"],65:["Zware regen","regen"],66:["Aanvriezende regen","regen"],
- 67:["Zware aanvriezende regen","regen"],71:["Lichte sneeuw","sneeuw"],73:["Sneeuw","sneeuw"],75:["Zware sneeuw","sneeuw"],
+ 55:["Zware motregen","regen"],56:["Aanvriezende motregen","ijzel"],57:["Zware aanvriezende motregen","ijzel"],
+ 61:["Lichte regen","regen"],63:["Regen","regen"],65:["Zware regen","regen"],66:["Aanvriezende regen","ijzel"],
+ 67:["Zware aanvriezende regen","ijzel"],71:["Lichte sneeuw","sneeuw"],73:["Sneeuw","sneeuw"],75:["Zware sneeuw","sneeuw"],
  77:["Sneeuwkorrels","sneeuw"],80:["Lichte buien","regen"],81:["Buien","regen"],82:["Zware buien","regen"],
  85:["Sneeuwbuien","sneeuw"],86:["Zware sneeuwbuien","sneeuw"],95:["Onweer","onweer"],96:["Onweer met hagel","onweer"],
  99:["Zwaar onweer met hagel","onweer"]};
@@ -296,8 +359,8 @@ const DAGENVOL=["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","z
 const BFT=[1,6,12,20,29,39,50,62,75,89,103,117];
 const BFTNAAM=["windstil","zwakke wind","zwakke wind","matige wind","matige wind","vrij krachtige wind",
   "krachtige wind","harde wind","stormachtige wind","storm","zware storm","zeer zware storm","orkaan"];
-const INK="#12211C",INK45="#77837E",INK25="#A9B2AE",RULE="#DCE1DE",RULES="#EDEFED",
-      NIGHT="#E6EAE7",TEAL="#0E6E75",CARMINE="#A02036",SHEET="#FFFFFF";
+const INK="var(--ink)",INK45="var(--ink-45)",INK25="var(--ink-25)",RULE="var(--rule)",
+      RULES="var(--rule-soft)",NIGHT="var(--night)",TEAL="var(--teal)",CARMINE="var(--carmine)",SHEET="var(--sheet)";
 
 const txt=c=>(CODES[c]||["Onbekend","wolk"])[0];
 const fam=c=>(CODES[c]||["Onbekend","wolk"])[1];
@@ -332,6 +395,8 @@ function icon(code,isDay,size){
   else if(f==="mist") b=mist;
   else if(f==="regen") b=wolkhoog+druppels;
   else if(f==="sneeuw") b=wolkhoog+vlokken;
+  else if(f==="ijzel") b=wolkhoog+`<line x1="9" y1="17.4" x2="8" y2="20" ${o}/><line x1="15" y1="17.4" x2="14" y2="20" ${o}/>`+
+    `<path d="M5.5 21.8q2-1.6 4 0t4 0t4 0" ${o}/>`;
   else b=wolkhoog+bliksem;
   return `<svg class="ico" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true">${b}</svg>`;
 }
@@ -353,6 +418,62 @@ function maanschijf(ill,fase,size){
     <path d="M 12 ${12-r} A ${r} ${r} 0 0 ${buiten} 12 ${12+r} A ${Math.abs(rx).toFixed(3)} ${r} 0 0 ${binnen} 12 ${12-r} Z" fill="${INK}"/></svg>`;
 }
 
+/* ---------- stand van zon en maan ---------- */
+const RAD=Math.PI/180;
+const jdVan=d=>d.getTime()/86400000+2440587.5;
+function zonPositie(D){
+  const g=(357.529+0.98560028*D)%360, q=(280.459+0.98564736*D)%360;
+  const L=(q+1.915*Math.sin(g*RAD)+0.020*Math.sin(2*g*RAD))%360;
+  const e=23.439-0.00000036*D;
+  return {ra:(Math.atan2(Math.cos(e*RAD)*Math.sin(L*RAD),Math.cos(L*RAD))/RAD+360)%360,
+          dec:Math.asin(Math.sin(e*RAD)*Math.sin(L*RAD))/RAD};
+}
+function maanPositie(D){
+  const L=(218.316+13.176396*D)%360, M=(134.963+13.064993*D)%360, F=(93.272+13.229350*D)%360;
+  const lon=L+6.289*Math.sin(M*RAD), lat=5.128*Math.sin(F*RAD), e=23.439-0.00000036*D;
+  const sl=Math.sin(lon*RAD),cl=Math.cos(lon*RAD),sb=Math.sin(lat*RAD),cb=Math.cos(lat*RAD);
+  const se=Math.sin(e*RAD),ce=Math.cos(e*RAD);
+  return {ra:(Math.atan2(sl*ce-(sb/cb)*se,cl)/RAD+360)%360,
+          dec:Math.asin(sb*ce+cb*se*sl)/RAD};
+}
+const gmstVan=D=>(280.46061837+360.98564736629*D)%360;
+function hoogteVan(pos,D,lat,lon){
+  const H=((gmstVan(D)+lon-pos.ra)%360+360)%360;
+  return Math.asin(Math.sin(lat*RAD)*Math.sin(pos.dec*RAD)
+    +Math.cos(lat*RAD)*Math.cos(pos.dec*RAD)*Math.cos(H*RAD))/RAD;
+}
+function maanHoogte(tUTC,lat,lon){
+  const D=jdVan(new Date(tUTC))-2451545.0;
+  return hoogteVan(maanPositie(D),D,lat,lon);
+}
+// op- en ondergang binnen 24 uur vanaf startUTC
+function opOnder(welk,startUTC,lat,lon){
+  const h0=welk==="zon"?-0.833:0.125;
+  const f=t=>{
+    const D=jdVan(new Date(t))-2451545.0;
+    return hoogteVan(welk==="zon"?zonPositie(D):maanPositie(D),D,lat,lon)-h0;
+  };
+  const stap=600000;
+  const bis=(a,b)=>{ for(let i=0;i<30;i++){ const m=(a+b)/2; if(f(a)*f(m)<=0) b=m; else a=m; } return (a+b)/2; };
+  let op=null,onder=null,vorig=f(startUTC);
+  for(let t=startUTC+stap;t<=startUTC+86400000;t+=stap){
+    const nu=f(t);
+    if(vorig<0&&nu>=0&&op===null) op=bis(t-stap,t);
+    if(vorig>=0&&nu<0&&onder===null) onder=bis(t-stap,t);
+    vorig=nu;
+  }
+  return {op:op,onder:onder};
+}
+// lokale tijdstring naar UTC-milliseconden, met de offset die de API meegeeft
+function naarUTC(lokaal){
+  const off=(S.d&&S.d.utc_offset_seconds!=null?S.d.utc_offset_seconds:0)*1000;
+  return Date.parse(lokaal+":00Z")-off;
+}
+function naarLokaal(msUTC){
+  const off=(S.d&&S.d.utc_offset_seconds!=null?S.d.utc_offset_seconds:0)*1000;
+  return new Date(msUTC+off).toISOString().slice(11,16);
+}
+
 /* ---------- maanfase ---------- */
 function maan(d){
   const syn=29.530588853;
@@ -364,7 +485,7 @@ function maan(d){
 }
 
 /* ---------- state ---------- */
-const S={lat:null,lon:null,label:"",d:null,ens:null,air:null,i0:0,dag:null,op:0,geo:null};
+const S={lat:null,lon:null,label:"",d:null,ens:null,air:null,i0:0,dag:null,op:0,geo:null,bereik:24};
 const KEY_P="weerbriefing.plaats",KEY_D="weerbriefing.data",KEY_L="weerbriefing.lijst";
 const ls={
   get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}},
@@ -373,7 +494,9 @@ const ls={
 async function j(url){const r=await fetch(url);if(!r.ok)throw new Error("status "+r.status);return r.json();}
 
 /* ---------- ophalen ---------- */
+let laadTeller=0;
 async function load(lat,lon,label,stil){
+  const mijnBeurt=++laadTeller;
   const st=document.getElementById("state");
   if(!stil){st.style.display="block";st.className="msg";st.textContent="Gegevens ophalen.";}
   S.lat=+lat;S.lon=+lon;S.label=label;
@@ -382,7 +505,7 @@ async function load(lat,lon,label,stil){
     +"&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,precipitation,"
     +"weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m"
     +"&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,"
-    +"precipitation_sum,uv_index_max,wind_speed_10m_max,wind_gusts_10m_max"
+    +"precipitation_sum,uv_index_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant"
     +"&forecast_days=7&timezone=auto&wind_speed_unit=kmh";
   const f=basis+"&minutely_15=precipitation&past_hours=3"
     +"&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,precipitation_probability,"
@@ -401,6 +524,7 @@ async function load(lat,lon,label,stil){
     const [rf,re,ra]=await Promise.allSettled([j(f),j(e),j(a)]);
     let vol=rf.status==="fulfilled"?rf.value:null;
     if(!vol) vol=await j(fmin);
+    if(mijnBeurt!==laadTeller) return;   // er is inmiddels een nieuwere plaats gekozen
     S.d=vol;
     S.ens=re.status==="fulfilled"?re.value:null;
     S.air=ra.status==="fulfilled"?ra.value:null;
@@ -408,10 +532,12 @@ async function load(lat,lon,label,stil){
     ls.set(KEY_P,{lat:S.lat,lon:S.lon,label:label});
     ls.set(KEY_D,{d:S.d,air:S.air,label:label,lat:S.lat,lon:S.lon,op:S.op});
     tekenAlles();
+    if(!R.frames.length) radarLaden(); else radarTeken();
     st.style.display="none";
     document.getElementById("app").style.display="block";
     urlBij();
   }catch(err){
+    if(mijnBeurt!==laadTeller) return;
     const oud=ls.get(KEY_D,null);
     if(oud&&oud.d){
       S.d=oud.d;S.air=oud.air;S.ens=null;S.label=oud.label;S.lat=oud.lat;S.lon=oud.lon;S.op=oud.op;
@@ -447,7 +573,11 @@ function tekenAlles(){
     const k=h.time.findIndex(t=>t.slice(0,10)===d.daily.time[S.dag]);
     if(k>=0) startIdx=k; else S.dag=null;
   }
-  meters();briefing();etmaal(startIdx,24);nowcast();dagen();nachten();lucht();stempel();
+  themaToepassen();
+  minibarBij();
+  waarschuwingen();
+  logBij();controle();
+  meters();briefing();etmaal(startIdx,S.bereik);nowcast();dagen();nachten();lucht();stempel();
 }
 function set(id,html){document.getElementById(id).innerHTML=html;}
 
@@ -622,7 +752,7 @@ function etmaal(start,n){
   const by=M?20:22, bh=M?11:16;
   const pt=M?72:76, ih=M?166:160, pb=pt+ih;
   const F={zon:M?10:10.5, nu:M?10:10, temp:M?13.5:15, uur:M?11:10.5, pre:M?10:9.5, grid:M?10:10.5};
-  const stap=M?4:3;
+  const stap = n<=24 ? (M?4:3) : n<=48 ? (M?8:6) : (M?24:12);
 
   let mn=Math.min(...T),mx=Math.max(...T);
   if(band){band.lo.forEach(v=>{if(v!=null)mn=Math.min(mn,v);});band.hi.forEach(v=>{if(v!=null)mx=Math.max(mx,v);});}
@@ -667,7 +797,11 @@ function etmaal(start,n){
   if(band){
     const bo=[],on=[];
     for(let k=0;k<T.length;k++){ if(band.hi[k]!=null){bo.push(x(k)+","+y(band.hi[k]));on.unshift(x(k)+","+y(band.lo[k]));} }
-    if(bo.length>3) bandpol=`<polygon points="${bo.concat(on).join(" ")}" fill="${INK}" fill-opacity=".07"/>`;
+    if(bo.length>3){
+      // vlak met een duidelijke stippellijn erlangs, zodat het geen vage vlek is
+      bandpol=`<polyline points="${bo.join(" ")}" fill="none" stroke="${INK25}" stroke-width="0.9" stroke-dasharray="3 3"/>
+        <polyline points="${on.slice().reverse().join(" ")}" fill="none" stroke="${INK25}" stroke-width="0.9" stroke-dasharray="3 3"/>`;
+    }
   }
   T.forEach((v,i)=>{
     if(P[i]>0){
@@ -678,7 +812,7 @@ function etmaal(start,n){
     if(i%stap===0){
       dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="${M?1.9:2.2}" fill="${INK}"/>`;
       labs+=`<text x="${x(i)+(i===0?(M?11:13):0)}" y="${y(v)-(M?9:11)}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="${F.temp}">${Math.round(v)}°</text>`;
-      ticks+=`<text x="${x(i)}" y="${pb+(M?20:22)}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="${F.uur}">${L[i]}</text>`;
+      ticks+=`<text x="${x(i)}" y="${pb+(M?20:22)}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="${F.uur}">${n>48?DAGEN[new Date(TI[i].slice(0,10)+"T12:00:00").getDay()]:L[i]}</text>`;
       if(P[i]>0) ticks+=`<text x="${x(i)}" y="${pb+(M?35:37)}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="${F.pre}">${P[i]}%</text>`;
     }
   });
@@ -702,7 +836,7 @@ function etmaal(start,n){
   scrubKoppel();
 
   const dg=S.dag;
-  document.getElementById("chartlab").textContent = dg==null ? "De komende 24 uur"
+  document.getElementById("chartlab").textContent = dg==null ? (S.bereik===24?"De komende 24 uur":S.bereik===48?"De komende 48 uur":"De komende zeven dagen")
     : new Date(S.d.daily.time[dg]+"T12:00:00").toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+", per uur";
   const di=dg==null?0:dg;
   document.getElementById("suntimes").innerHTML=(day.sunrise[di]&&day.sunset[di])
@@ -749,7 +883,10 @@ function scrubKoppel(){
   };
   hit.addEventListener("pointermove",toon);
   hit.addEventListener("pointerdown",toon);
-  hit.addEventListener("pointerleave",()=>{g.style.display="none";});
+  const verberg=()=>{g.style.display="none";};
+  hit.addEventListener("pointerleave",verberg);
+  hit.addEventListener("pointercancel",verberg);
+  hit.addEventListener("pointerup",e=>{ if(e.pointerType!=="mouse") setTimeout(verberg,1800); });
 }
 
 /* ---------- kwartierneerslag ---------- */
@@ -810,6 +947,7 @@ function dagen(){
     out+=`<div class="row day${S.dag===i?" on":""}" data-i="${i}" role="button" tabindex="0">
       <div class="dname">${nm}</div><div>${icon(day.weather_code[i],true,22)}</div>
       <div class="dcond">${txt(day.weather_code[i])}${day.precipitation_sum[i]>0.5?", "+nl(day.precipitation_sum[i])+" mm":""}</div>
+      <div class="dwind">${bft(day.wind_speed_10m_max[i]||0)} Bft ${pijl(day.wind_direction_10m_dominant?day.wind_direction_10m_dominant[i]:0,11)}</div>
       <div class="dmin">${Math.round(l)}°</div>
       <div class="bar"><i style="left:${(l-lo)/sp*100}%;width:${Math.max(3,(hh-l)/sp*100)}%"></i></div>
       <div class="dmax">${Math.round(hh)}°</div>
@@ -817,7 +955,7 @@ function dagen(){
   });
   const kop=`<div class="row day kop">
       <div class="dname">Dag</div><div></div><div class="dcond">Verwachting</div>
-      <div class="dmin">Min</div><div class="bar"></div><div class="dmax">Max</div>
+      <div class="dwind">Wind</div><div class="dmin">Min</div><div class="bar"></div><div class="dmax">Max</div>
       <div class="drain">Kans</div></div>`;
   const c=document.getElementById("days");c.innerHTML=kop+out;
   c.querySelectorAll(".day:not(.kop)").forEach(el=>{
@@ -832,7 +970,12 @@ function dagen(){
     el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();kies();}});
   });
 }
-document.getElementById("back").addEventListener("click",()=>{S.dag=null;etmaal(S.i0,24);dagen();});
+document.getElementById("back").addEventListener("click",()=>{S.dag=null;etmaal(S.i0,S.bereik);dagen();});
+document.querySelectorAll(".bereik button").forEach(b=>b.addEventListener("click",()=>{
+  S.bereik=+b.dataset.n; S.dag=null;
+  document.querySelectorAll(".bereik button").forEach(x=>x.classList.toggle("aan",x===b));
+  etmaal(S.i0,S.bereik); dagen();
+}));
 
 /* ---------- nachtzicht ---------- */
 function nachten(){
@@ -842,10 +985,10 @@ function nachten(){
   for(let d=0;d<6;d++){
     const ss=day.sunset[d],sr2=day.sunrise[d+1];
     if(!ss||!sr2) break;
-    const a=idx[ss.slice(0,13)+":00"],b=idx[sr2.slice(0,13)+":00"];
-    if(a==null||b==null||b<=a) continue;
+    const a2=idx[ss.slice(0,13)+":00"],b2=idx[sr2.slice(0,13)+":00"];
+    if(a2==null||b2==null||b2<=a2) continue;
     const C=[],HU=[],SP=[],GU=[],TT=[];
-    for(let i=a+1;i<b;i++){
+    for(let i=a2+1;i<b2;i++){
       if(h.cloud_cover[i]==null) continue;
       C.push(h.cloud_cover[i]);HU.push(h.relative_humidity_2m[i]);
       SP.push(h.temperature_2m[i]-h.dew_point_2m[i]);GU.push(h.wind_gusts_10m[i]);TT.push(h.time[i]);
@@ -853,16 +996,34 @@ function nachten(){
     if(!C.length) continue;
     const gem=v=>v.reduce((x,y)=>x+y,0)/v.length;
     const cw=gem(C),hu=gem(HU),spd=Math.min(...SP),gu=Math.max(...GU);
-    const mn=maan(new Date(ss.slice(0,10)+"T23:30:00"));
+    const mn=maan(new Date(naarUTC(ss.slice(0,10)+"T23:30")));
+
+    // maan boven of onder de horizon per uur
+    const maanOp=TT.map(t=>maanHoogte(naarUTC(t),S.lat,S.lon)>0);
+    const donkerUren=TT.filter((t,i)=>!maanOp[i]).length;
+    const maanDeel=1-donkerUren/TT.length;      // aandeel van de nacht met maan boven de horizon
+
     let sc=(1-cw/100)*10;
     if(hu>93) sc-=1.5;
     if(spd<1.5) sc-=1;
     if(gu>45) sc-=1;
-    sc-=2.2*mn.ill*(1-cw/140);
+    sc-=2.2*mn.ill*maanDeel*(1-cw/140);          // maan telt alleen mee als hij ook echt op is
     sc=clamp(sc,0,10);
+
+    // langste aaneengesloten venster met weinig bewolking en maan onder de horizon
     let run=0,bs=-1,br=0,bstart=-1;
-    for(let i=0;i<C.length;i++){ if(C[i]<35){ if(run===0)bs=i; run++; if(run>br){br=run;bstart=bs;} } else run=0; }
-    const venster=br>=2?"opklaring van "+TT[bstart].slice(11,16)+" tot "+TT[Math.min(bstart+br,TT.length-1)].slice(11,16):null;
+    for(let i=0;i<C.length;i++){
+      const goed = C[i]<35 && (!maanOp[i] || mn.ill<0.25);
+      if(goed){ if(run===0) bs=i; run++; if(run>br){br=run;bstart=bs;} } else run=0;
+    }
+    const venster=br>=2?"donker en helder van "+TT[bstart].slice(11,16)+" tot "+TT[Math.min(bstart+br,TT.length-1)].slice(11,16):null;
+
+    // maantijden voor deze nacht
+    const mt=opOnder("maan",naarUTC(ss.slice(0,10)+"T12:00"),S.lat,S.lon);
+    const maanTekst=[];
+    if(mt.op!=null) maanTekst.push("op "+naarLokaal(mt.op));
+    if(mt.onder!=null) maanTekst.push("onder "+naarLokaal(mt.onder));
+
     const kleur=sc>=7?TEAL:sc>=4?INK:INK25;
     const lbl=d===0?"vannacht":DAGEN[new Date(ss.slice(0,10)+"T12:00:00").getDay()]+" op "+DAGEN[new Date(sr2.slice(0,10)+"T12:00:00").getDay()];
     out+=`<div class="row night">
@@ -870,11 +1031,11 @@ function nachten(){
       <div class="score" style="color:${kleur}">${nl(sc)}</div>
       <div class="sbar"><i style="width:${sc*10}%;background:${kleur}"></i></div>
       <div class="nmeta">${Math.round(cw)}% bewolking</div>
-      <div class="nmeta wide">${venster||"geen opklaringen"}, maan ${Math.round(mn.ill*100)}%</div></div>`;
+      <div class="nmeta wide">${venster||"geen donker venster"}${maanTekst.length?" · maan "+maanTekst.join(", "):""}</div></div>`;
   }
   const kopN=`<div class="row night kop">
       <div class="dname">Nacht</div><div class="score">Score 0-10</div><div class="sbar"></div>
-      <div class="nmeta">Bewolking</div><div class="nmeta wide">Opklaringen en maan</div></div>`;
+      <div class="nmeta">Bewolking</div><div class="nmeta wide">Waarneemvenster en maan</div></div>`;
   document.getElementById("nights").innerHTML=(out?kopN+out:"")||'<div class="msg">Geen nachtdata beschikbaar.</div>';
   const m=maan(new Date());
   document.getElementById("moonlab").innerHTML=maanschijf(m.ill,m.fase)+"<span>"+m.naam+", "+Math.round(m.ill*100)+" procent verlicht</span>";
@@ -915,6 +1076,157 @@ function lucht(){
   el.innerHTML=out;
 }
 
+/* ---------- verwachting versus meting ---------- */
+const KEY_LOG="weerbriefing.log";
+function logBij(){
+  if(!S.d||!S.d.daily||!S.d.daily.time[1]) return;
+  const log=ls.get(KEY_LOG,{});
+  const sleutel=S.lat.toFixed(2)+","+S.lon.toFixed(2);
+  const perPlaats=log[sleutel]||{};
+  const datum=S.d.daily.time[1];
+  if(!perPlaats[datum]){
+    perPlaats[datum]={max:S.d.daily.temperature_2m_max[1],min:S.d.daily.temperature_2m_min[1],
+                      mm:S.d.daily.precipitation_sum[1],gemaaktOp:S.d.daily.time[0]};
+    // hoogstens veertien dagen bewaren
+    const datums=Object.keys(perPlaats).sort();
+    while(datums.length>14) delete perPlaats[datums.shift()];
+    log[sleutel]=perPlaats; ls.set(KEY_LOG,log);
+  }
+}
+async function controle(){
+  const kop=document.getElementById("kopcontrole"),el=document.getElementById("controle");
+  kop.style.display="none"; el.innerHTML="";
+  const log=ls.get(KEY_LOG,{})[S.lat.toFixed(2)+","+S.lon.toFixed(2)];
+  if(!log||!Object.keys(log).length) return;
+  let gemeten;
+  try{
+    gemeten=await j("https://api.open-meteo.com/v1/forecast?latitude="+S.lat+"&longitude="+S.lon
+      +"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&past_days=7&forecast_days=1&timezone=auto");
+  }catch(e){ return; }
+  const m={};
+  gemeten.daily.time.forEach((t,i)=>m[t]={max:gemeten.daily.temperature_2m_max[i],
+    min:gemeten.daily.temperature_2m_min[i],mm:gemeten.daily.precipitation_sum[i]});
+  const vandaag=S.d.daily.time[0];
+  const rijen=Object.keys(log).filter(dt=>dt<vandaag&&m[dt]).sort().reverse().slice(0,5);
+  if(!rijen.length) return;
+  kop.style.display="flex";
+  const verschil=(v,g)=>{ const d2=g-v; return (d2>0?"+":"")+nl(d2); };
+  el.innerHTML=`<div class="row ctrl kop"><div class="dname">Dag</div><div>Voorspeld</div>
+      <div>Gemeten</div><div class="nmeta">Verschil</div></div>`+
+    rijen.map(dt=>{
+      const v=log[dt],g=m[dt];
+      const dm=Math.abs(g.max-v.max);
+      const kleur=dm<=1?TEAL:dm<=2.5?INK:CARMINE;
+      return `<div class="row ctrl">
+        <div class="dname">${new Date(dt+"T12:00:00").toLocaleDateString("nl-NL",{weekday:"short",day:"numeric",month:"short"})}</div>
+        <div class="mono">${Math.round(v.max)}° / ${Math.round(v.min)}° · ${nl(v.mm)} mm</div>
+        <div class="mono">${Math.round(g.max)}° / ${Math.round(g.min)}° · ${nl(g.mm)} mm</div>
+        <div class="nmeta" style="color:${kleur}">${verschil(v.max,g.max)}° op de max</div></div>`;
+    }).join("");
+}
+
+/* ---------- neerslagradar ---------- */
+const R={frames:[],i:0,speelt:false,timer:null,host:"",geladen:{}};
+const TEGEL=256, ZOOM=7;
+function wereldXY(lat,lon,z){
+  const n=Math.pow(2,z)*TEGEL;
+  const x=(lon+180)/360*n;
+  const s2=Math.sin(lat*Math.PI/180);
+  const y=(0.5-Math.log((1+s2)/(1-s2))/(4*Math.PI))*n;
+  return {x:x,y:y};
+}
+function tegel(url,klaar){
+  if(R.geladen[url]){klaar(R.geladen[url]);return;}
+  const im=new Image();
+  im.onload=()=>{R.geladen[url]=im;klaar(im);};
+  im.onerror=()=>klaar(null);
+  im.src=url;
+}
+function radarTeken(){
+  const c=document.getElementById("radar");
+  if(!c||!R.frames.length||S.lat==null) return;
+  const ctx=c.getContext("2d");
+  const W=c.width,H=c.height;
+  const mid=wereldXY(S.lat,S.lon,ZOOM);
+  const ox=mid.x-W/2, oy=mid.y-H/2;
+  const donker=document.documentElement.getAttribute("data-thema")!=="licht";
+  const stijl=donker?"dark_nolabels":"light_nolabels";
+  const f=R.frames[R.i];
+  ctx.clearRect(0,0,W,H);
+  const tx0=Math.floor(ox/TEGEL), tx1=Math.floor((ox+W)/TEGEL);
+  const ty0=Math.floor(oy/TEGEL), ty1=Math.floor((oy+H)/TEGEL);
+  const max=Math.pow(2,ZOOM);
+  for(let tx=tx0;tx<=tx1;tx++) for(let ty=ty0;ty<=ty1;ty++){
+    if(ty<0||ty>=max) continue;
+    const X=((tx%max)+max)%max;
+    const px=tx*TEGEL-ox, py=ty*TEGEL-oy;
+    tegel(`https://basemaps.cartocdn.com/${stijl}/${ZOOM}/${X}/${ty}.png`,im=>{
+      if(im){ctx.globalAlpha=donker?0.55:0.75;ctx.drawImage(im,px,py);ctx.globalAlpha=1;}
+      tegel(`${R.host}${f.path}/${TEGEL}/${ZOOM}/${X}/${ty}/2/1_1.png`,rm=>{
+        if(rm){ctx.globalAlpha=0.85;ctx.drawImage(rm,px,py);ctx.globalAlpha=1;}
+        markeer(ctx,W,H);
+      });
+    });
+  }
+  const lok=naarLokaal(f.time*1000);
+  document.getElementById("radartijd").textContent=(f.toekomst?"verwacht ":"")+lok;
+}
+function markeer(ctx,W,H){
+  ctx.save();
+  ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--carmine").trim()||"#A02036";
+  ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(W/2,H/2,7,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W/2-13,H/2);ctx.lineTo(W/2-9,H/2);
+  ctx.moveTo(W/2+9,H/2);ctx.lineTo(W/2+13,H/2);
+  ctx.moveTo(W/2,H/2-13);ctx.lineTo(W/2,H/2-9);
+  ctx.moveTo(W/2,H/2+9);ctx.lineTo(W/2,H/2+13);ctx.stroke();
+  ctx.restore();
+}
+async function radarLaden(){
+  const mld=document.getElementById("radarmelding");
+  try{
+    const d=await j("https://api.rainviewer.com/public/weather-maps.json");
+    R.host=d.host||"https://tilecache.rainviewer.com";
+    const verleden=(d.radar&&d.radar.past?d.radar.past:[]).slice(-8).map(f=>({time:f.time,path:f.path,toekomst:false}));
+    const straks=(d.radar&&d.radar.nowcast?d.radar.nowcast:[]).map(f=>({time:f.time,path:f.path,toekomst:true}));
+    R.frames=verleden.concat(straks);
+    if(!R.frames.length){mld.textContent="Geen radarbeelden beschikbaar.";return;}
+    R.i=Math.max(0,verleden.length-1);
+    const sch=document.getElementById("rschuif");
+    sch.max=R.frames.length-1; sch.value=R.i;
+    mld.textContent="Beeld per tien minuten, de laatste drie stappen zijn een verwachting.";
+    radarTeken();
+  }catch(e){
+    mld.textContent="Radar niet beschikbaar.";
+    document.getElementById("radar").style.display="none";
+    document.querySelector(".radarbalk").style.display="none";
+  }
+}
+document.getElementById("rschuif").addEventListener("input",e=>{R.i=+e.target.value;radarTeken();});
+document.getElementById("rspeel").addEventListener("click",()=>{
+  const b=document.getElementById("rspeel");
+  if(R.speelt){clearInterval(R.timer);R.speelt=false;b.textContent="Speel af";return;}
+  R.speelt=true;b.textContent="Pauzeer";
+  R.timer=setInterval(()=>{
+    R.i=(R.i+1)%R.frames.length;
+    document.getElementById("rschuif").value=R.i;
+    radarTeken();
+  },550);
+});
+
+/* ---------- officiele waarschuwingen ---------- */
+async function waarschuwingen(){
+  const el=document.getElementById("waarschuwingen");
+  el.innerHTML="";
+  try{
+    const d=await j("/api/waarschuwingen?lat="+S.lat+"&lon="+S.lon);
+    if(!d||!d.lijst||!d.lijst.length) return;
+    el.innerHTML=d.lijst.slice(0,3).map(w=>
+      `<div class="waarsch"><h3>${esc(w.titel)}</h3><p>${esc(w.tekst||"")}${w.tot?" Geldig tot "+esc(w.tot)+".":""}</p></div>`
+    ).join("");
+  }catch(e){ /* geen functie of geen verbinding: blok blijft leeg */ }
+}
+
 /* ---------- plaatsen ---------- */
 function chips(){
   const lijst=ls.get(KEY_L,[]);
@@ -945,6 +1257,39 @@ function chips(){
     add.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();bewaar();}});
   }
 }
+
+/* ---------- meeschuivende balk ---------- */
+function minibarBij(){
+  document.getElementById("miniplaats").textContent=S.label;
+  document.getElementById("minitemp").textContent=Math.round(S.d.current.temperature_2m)+"°C, "+txt(S.d.current.weather_code).toLowerCase();
+}
+(function(){
+  const hero=document.querySelector(".hero"),bar=document.getElementById("minibar");
+  if(!hero||!("IntersectionObserver" in window)) return;
+  new IntersectionObserver(([e])=>{
+    bar.classList.toggle("aan",!e.isIntersecting&&e.boundingClientRect.top<0);
+  },{threshold:0}).observe(hero);
+})();
+
+/* ---------- thema ---------- */
+const THEMAS=["auto","licht","donker","rood"];
+function themaToepassen(){
+  const keuze=ls.get("weerbriefing.thema","auto");
+  let actief=keuze;
+  if(keuze==="auto") actief = (S.d&&S.d.current&&S.d.current.is_day===0)?"donker":"licht";
+  document.documentElement.setAttribute("data-thema",actief);
+  document.querySelector('meta[name="theme-color"]').setAttribute("content",
+    actief==="donker"?"#0B120F":actief==="rood"?"#080202":"#F4F5F3");
+  const knop=document.getElementById("thema");
+  knop.textContent=keuze.charAt(0).toUpperCase()+keuze.slice(1);
+  knop.title="Weergave: "+keuze+". Klik voor de volgende stand.";
+}
+document.getElementById("thema").addEventListener("click",()=>{
+  const nu=ls.get("weerbriefing.thema","auto");
+  ls.set("weerbriefing.thema",THEMAS[(THEMAS.indexOf(nu)+1)%THEMAS.length]);
+  themaToepassen();
+});
+themaToepassen();
 
 /* ---------- stempel en verversen ---------- */
 function stempel(){
@@ -1037,7 +1382,7 @@ window.addEventListener("resize",()=>{
       const k=S.d.hourly.time.findIndex(t=>t.slice(0,10)===S.d.daily.time[S.dag]);
       if(k>=0) st=k;
     }
-    etmaal(st,24);nowcast();
+    etmaal(st,S.bereik);nowcast();
   },250);
 });
 

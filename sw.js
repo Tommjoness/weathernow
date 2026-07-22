@@ -1,4 +1,4 @@
-const CACHE = "weerbriefing-v18";
+const CACHE = "weerbriefing-v23";
 const SHELL = [
   "./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
   "./bodoni-moda-latin-400-normal.woff2",
@@ -31,7 +31,8 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET") return;
   // weer- en luchtdata nooit uit cache serveren
-  if (/open-meteo\.com$|bigdatacloud\.net$/.test(url.hostname)) return;
+  if (/open-meteo\.com$|bigdatacloud\.net$|rainviewer\.com$|cartocdn\.com$/.test(url.hostname)) return;
+  if (url.pathname.startsWith("/api/")) return;   // waarschuwingen altijd vers
   if (url.origin !== location.origin) return;
 
   // app-shell: netwerk eerst voor index.html zodat updates direct doorkomen
