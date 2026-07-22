@@ -232,7 +232,7 @@
     .stat:nth-child(2n){border-right:none;padding-right:0}
     .stat:not(:nth-child(4n+1)){padding-left:0}
     .stat:nth-child(2n){padding-left:22px}
-    .day{grid-template-columns:84px 22px 1fr 56px 38px 38px 42px;gap:7px}
+    .day{grid-template-columns:72px 20px 58px 1fr 1fr 44px;gap:7px}
     .dname{font-size:12.5px}
     .dcond{display:none}
     .bar{display:none}
@@ -821,7 +821,7 @@ function etmaal(start,n){
     if(di2>=0) tijd=g.op?day.sunrise[di2]:day.sunset[di2];
     const xx=x(g.i)-cw/2;
     balk+=`<line x1="${xx}" y1="${by-5}" x2="${xx}" y2="${by+bh+4}" stroke="${INK}" stroke-width="1"/>`;
-    if(tijd) balk+=`<text x="${xx+(g.op?4:-4)}" y="${by-9}" text-anchor="${g.op?"start":"end"}" fill="${INK45}"
+    if(tijd&&n<=48) balk+=`<text x="${xx+(g.op?4:-4)}" y="${by-9}" text-anchor="${g.op?"start":"end"}" fill="${INK45}"
       font-family="DM Mono,monospace" font-size="${F.zon}">${g.op?"op ":"onder "}${hhmm(tijd)}</text>`;
   });
 
@@ -852,6 +852,10 @@ function etmaal(start,n){
     if(i%stap===0){
       dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="${M?1.9:2.2}" fill="${INK}"/>`;
       labs+=`<text x="${x(i)+(i===0?(M?11:13):0)}" y="${y(v)-(M?9:11)}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="${F.temp}">${Math.round(v)}°</text>`;
+    }
+    // bij een week loopt de as per dag, daarbinnen per paar uur
+    const toonAs = n>48 ? L[i]==="12" : (i%stap===0);
+    if(toonAs){
       ticks+=`<text x="${x(i)}" y="${pb+(M?20:22)}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="${F.uur}">${n>48?DAGEN[new Date(TI[i].slice(0,10)+"T12:00:00").getDay()]:L[i]}</text>`;
       if(P[i]>0) ticks+=`<text x="${x(i)}" y="${pb+(M?35:37)}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="${F.pre}">${P[i]}%</text>`;
     }
@@ -995,7 +999,7 @@ function dagen(){
   });
   const kop=`<div class="row day kop">
       <div class="dname">Dag</div><div class="dico"></div><div class="dcond">Verwachting</div>
-      <div class="dwind">Wind</div><div class="dmin">Min</div><div class="bar"></div><div class="dmax">Max</div>
+      <div class="dwind">Wind max</div><div class="dmin">Min</div><div class="bar"></div><div class="dmax">Max</div>
       <div class="drain">Kans</div></div>`;
   const c=document.getElementById("days");c.innerHTML=kop+out;
   c.querySelectorAll(".day:not(.kop)").forEach(el=>{
@@ -1182,6 +1186,9 @@ function wereldXY(lat,lon,z){
 }
 function tegel(url,klaar){
   if(R.geladen[url]){klaar(R.geladen[url]);return;}
+  // geheugen begrenzen, anders groeit de cache bij een tabblad dat uren openstaat
+  const sleutels=Object.keys(R.geladen);
+  if(sleutels.length>300) sleutels.slice(0,150).forEach(k=>delete R.geladen[k]);
   const im=new Image();
   im.onload=()=>{R.geladen[url]=im;klaar(im);};
   im.onerror=()=>klaar(null);
@@ -1213,6 +1220,8 @@ function radarTeken(){
       });
     });
   }
+  clearTimeout(R.kruis);
+  R.kruis=setTimeout(()=>markeer(ctx,W,H),350);   // kruisje bovenop, ook als een tegel traag binnenkomt
   const el2=document.getElementById("radartijd");
   el2.className=f.toekomst?"straks":"";
   el2.innerHTML=naarLokaal(f.time*1000)+(f.toekomst?"<small>verwachting</small>":"");
@@ -1334,6 +1343,7 @@ document.getElementById("thema").addEventListener("click",()=>{
   const nu=ls.get("weerbriefing.thema","auto");
   ls.set("weerbriefing.thema",THEMAS[(THEMAS.indexOf(nu)+1)%THEMAS.length]);
   themaToepassen();
+  if(R.frames.length) radarTeken();   // de kaartondergrond wisselt mee
 });
 themaToepassen();
 

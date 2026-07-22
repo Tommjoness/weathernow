@@ -107,6 +107,25 @@ for(const breedte of [390,1280]){
     "x "+Math.min(...X).toFixed(0)+" tot "+Math.max(...X).toFixed(0)+" in "+vb[2]);
 }
 
+/* 7b. aslabels mogen elkaar niet raken, bij geen enkel bereik */
+groep("Leesbaarheid van de grafiek");
+for(const [naam,n,br] of [["24 uur op de desktop",24,1280],["48 uur op de desktop",48,1280],
+                          ["7 dagen op de desktop",168,1280],["24 uur op de telefoon",24,390],
+                          ["7 dagen op de telefoon",168,390]]){
+  const {api,bak}=laadKern(br);
+  Object.assign(api.S,{d:bouw({}),op:Date.now(),lat:52.35,lon:5.26,label:"T",dag:null,bereik:n});
+  api.S.i0=api.S.d.hourly.time.findIndex(t=>t.slice(0,13)===api.S.d.current.time.slice(0,13));
+  api.etmaal(api.S.i0,n);
+  const h=bak.chart.innerHTML;
+  const as=[...h.matchAll(/<text x="([\d.]+)" y="[\d.]+" text-anchor="middle"[^>]*font-size="([\d.]+)">([^<]+)</g)]
+    .filter(m=>/^(\d\d|ma|di|wo|do|vr|za|zo)$/.test(m[3]))
+    .map(m=>({x:+m[1],b:m[3].length*(+m[2])*0.6}));
+  as.sort((a,b)=>a.x-b.x);
+  let botsing=0;
+  for(let i=1;i<as.length;i++) if(as[i].x-as[i-1].x<(as[i].b+as[i-1].b)/2) botsing++;
+  check(naam+": aslabels overlappen niet",botsing===0,botsing+" botsingen bij "+as.length+" labels");
+}
+
 /* 8. tabellen */
 groep("Tabellen");
 {
