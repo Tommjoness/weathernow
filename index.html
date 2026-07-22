@@ -382,6 +382,8 @@ const mins=s=>parseInt(s.slice(11,13),10)*60+parseInt(s.slice(14,16),10);
 const hhmm=s=>s.slice(11,16);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=t=>String(t==null?"":t).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const EENHEDEN="km/u|mm|hPa|Bft|graden|graad|meter|procent|korrels|µg|uur|minuten|minuut|%";
+const nbsp=t=>String(t).replace(new RegExp("(\\d)\\s("+EENHEDEN+")","g"),"$1\u00a0$2");
 const nl=(v,d)=>(v==null?"–":Number(v).toFixed(d==null?1:d).replace(".",","));
 function bft(k){let n=0;for(let i=0;i<BFT.length;i++) if(k>=BFT[i]) n=i+1;return n;}
 
@@ -593,7 +595,8 @@ function tekenAlles(){
   logBij();controle();
   meters();briefing();etmaal(startIdx,S.bereik);nowcast();dagen();nachten();lucht();stempel();
 }
-function set(id,html){document.getElementById(id).innerHTML=html;}
+function set(id,html){document.getElementById(id).innerHTML=nbsp(html);}
+function zetTekst(id,tekst){document.getElementById(id).textContent=nbsp(tekst);}
 
 function piek(veld,dagIndex,vanafNu){
   const h=S.d.hourly,dag=S.d.daily.time[dagIndex||0],nu=S.d.current.time;
@@ -612,15 +615,15 @@ function meters(){
 
   const b=bft(c.wind_speed_10m);
   set("wind",Math.round(c.wind_speed_10m)+"<s>km/u</s> "+pijl(c.wind_direction_10m));
-  document.getElementById("windsub").textContent = b===0
+  zetTekst("windsub", b===0
     ? "Vrijwel windstil."
-    : BFTNAAM[b].charAt(0).toUpperCase()+BFTNAAM[b].slice(1)+" uit het "+kompas(c.wind_direction_10m)+" ("+b+" Bft).";
+    : BFTNAAM[b].charAt(0).toUpperCase()+BFTNAAM[b].slice(1)+" uit het "+kompas(c.wind_direction_10m)+" ("+b+" Bft).");
 
   set("gust",Math.round(c.wind_gusts_10m)+"<s>km/u</s>");
   const pg=piek("wind_gusts_10m",0);
-  document.getElementById("gustsub").textContent = !pg ? "Geen uurgegevens beschikbaar."
+  zetTekst("gustsub", !pg ? "Geen uurgegevens beschikbaar."
     : pg.t>nu ? "Toppen tot "+Math.round(pg.v)+" km/u rond "+hhmm(pg.t)+"."
-    : "De zwaarste stoot was "+Math.round(pg.v)+" km/u rond "+hhmm(pg.t)+".";
+    : "De zwaarste stoot was "+Math.round(pg.v)+" km/u rond "+hhmm(pg.t)+".");
 
   set("prec",nl(c.precipitation)+"<s>mm</s>");
   const som=day.precipitation_sum[0];
@@ -631,33 +634,33 @@ function meters(){
   }
   const pnNog=piek("precipitation",0,true), pnAl=piek("precipitation",0);
   if(som<0.05){
-    document.getElementById("precsub").textContent="Vandaag blijft het droog.";
+    zetTekst("precsub", "Vandaag blijft het droog.");
   }else if(restMm>=0.1){
-    document.getElementById("precsub").textContent="Vandaag nog "+nl(restMm)+" mm verwacht"
-      +((pnNog&&pnNog.v>=0.1)?", het meeste rond "+hhmm(pnNog.t)+".":".");
+    zetTekst("precsub", "Vandaag nog "+nl(restMm)+" mm verwacht"
+      +((pnNog&&pnNog.v>=0.1)?", het meeste rond "+hhmm(pnNog.t)+".":"."));
   }else{
-    document.getElementById("precsub").textContent="Vandaag viel er "+nl(som)+" mm"
-      +((pnAl&&pnAl.v>=0.1)?", het meeste rond "+hhmm(pnAl.t)+".":" in totaal.");
+    zetTekst("precsub", "Vandaag viel er "+nl(som)+" mm"
+      +((pnAl&&pnAl.v>=0.1)?", het meeste rond "+hhmm(pnAl.t)+".":" in totaal."));
   }
 
   set("pop",(h.precipitation_probability[i+1]??0)+"<s>%</s>");
   const pp=piek("precipitation_probability",0,true);
-  document.getElementById("popsub").textContent = (!pp||pp.v<20)
+  zetTekst("popsub", (!pp||pp.v<20)
     ? "Vandaag nauwelijks kans op neerslag."
-    : "De grootste kans is "+Math.round(pp.v)+"%, rond "+hhmm(pp.t)+".";
+    : "De grootste kans is "+Math.round(pp.v)+"%, rond "+hhmm(pp.t)+".");
 
   set("hum",c.relative_humidity_2m+"<s>%</s>");
   const dew=h.dew_point_2m[i]??c.temperature_2m, sp=c.temperature_2m-dew;
   const basis=Math.round(sp*125/50)*50;
-  document.getElementById("humsub").textContent = sp<2
+  zetTekst("humsub", sp<2
     ? "Nog "+nl(sp)+" graden tot verzadiging, dus kans op mist."
-    : "Het dauwpunt ligt "+nl(sp)+" graden lager, wolken vanaf ongeveer "+basis+" meter.";
+    : "Het dauwpunt ligt "+nl(sp)+" graden lager, wolken vanaf ongeveer "+basis+" meter.");
 
   set("pres",Math.round(c.pressure_msl)+"<s>hPa</s>");
   const p3=h.pressure_msl[i-3],dp=(p3!=null)?c.pressure_msl-p3:null;
-  document.getElementById("pressub").textContent = dp==null ? "Geen tendens beschikbaar."
+  zetTekst("pressub", dp==null ? "Geen tendens beschikbaar."
     : Math.abs(dp)<0.15 ? "In drie uur nauwelijks veranderd."
-    : "In drie uur "+nl(Math.abs(dp))+" hPa "+(dp>0?"gestegen":"gedaald")+".";
+    : "In drie uur "+nl(Math.abs(dp))+" hPa "+(dp>0?"gestegen":"gedaald")+".");
 
   set("cloud",c.cloud_cover+"<s>%</s>");
   const cc=c.cloud_cover;
@@ -665,16 +668,16 @@ function meters(){
             : cc>=15?"Overwegend zonnig":"Vrijwel onbewolkt";
   const pu=piek("uv_index",0);
   const uvOordeel=v=>v<3?"laag":v<6?"matig":v<8?"hoog":v<11?"zeer hoog":"extreem";
-  document.getElementById("cloudsub").textContent = bew+(
+  zetTekst("cloudsub", bew+(
     (!pu||pu.v<0.5) ? ", nauwelijks UV vandaag."
-    : ", de UV-index "+(pu.t>nu?"piekt":"piekte")+" rond "+hhmm(pu.t)+" op "+nl(pu.v)+", dat is "+uvOordeel(pu.v)+".");
+    : ", de UV-index "+(pu.t>nu?"piekt":"piekte")+" rond "+hhmm(pu.t)+" op "+nl(pu.v)+", dat is "+uvOordeel(pu.v)+"."));
 
   const v=h.visibility?h.visibility[i]:null;
   set("vis",v==null?"–":(v>=10000?"10+":nl(v/1000))+"<s>km</s>");
-  document.getElementById("vissub").textContent = v==null ? "Niet beschikbaar."
+  zetTekst("vissub", v==null ? "Niet beschikbaar."
     : v<1000 ? "Slecht zicht, minder dan een kilometer."
     : v<4000 ? "Beperkt zicht."
-    : v<10000 ? "Redelijk zicht." : "Goed zicht, meer dan tien kilometer.";
+    : v<10000 ? "Redelijk zicht." : "Goed zicht, meer dan tien kilometer.");
 }
 
 /* ---------- briefingregel ---------- */
@@ -752,7 +755,7 @@ function briefing(){
   zin3 += (wi>i+1) ? ", rond "+hhmm(h.time[wi])+" is de wind het sterkst" : "";
   zin3 += gmax>=60 ? ", met stoten tot "+Math.round(gmax)+" km/u." : ".";
 
-  document.getElementById("brief").innerHTML=zin1+" "+zin2+" "+zin3;
+  document.getElementById("brief").innerHTML=nbsp(zin1+" "+zin2+" "+zin3);
 }
 
 /* ---------- ensemble ---------- */
@@ -966,11 +969,11 @@ function nowcast(){
   el.style.display=som<0.05?"none":"block";
   if(P[0]>=0.1){
     const stop=P.findIndex((v,k)=>k>0&&v<0.1);
-    tx.textContent = stop>0
+    tx.textContent = nbsp(stop>0
       ? "Er valt nu neerslag. Rond "+T[stop].slice(11,16)+" wordt het droog."
-      : "Er valt nu neerslag en dat blijft de komende twee uur zo.";
+      : "Er valt nu neerslag en dat blijft de komende twee uur zo.");
   }else if(eerste>0){
-    tx.textContent="Het is nu droog. Vanaf ongeveer "+T[eerste].slice(11,16)+" begint de neerslag, in totaal "+nl(som)+" mm.";
+    tx.textContent=nbsp("Het is nu droog. Vanaf ongeveer "+T[eerste].slice(11,16)+" begint de neerslag, in totaal "+nl(som)+" mm.");
   }else{
     tx.textContent="De komende twee uur blijft het droog.";
   }
@@ -1183,7 +1186,7 @@ async function controle(){
 }
 
 /* ---------- neerslagradar ---------- */
-const R={frames:[],i:0,speelt:false,timer:null,host:"",geladen:{}};
+const R={frames:[],i:0,speelt:false,timer:null,host:"",geladen:{},pogingen:0,gelukt:0,verwacht:0,terug:false};
 const TEGEL=256, ZOOM=7;
 function wereldXY(lat,lon,z){
   const n=Math.pow(2,z)*TEGEL;
@@ -1213,8 +1216,10 @@ function radarTeken(){
   const stijl=donker?"dark_nolabels":"light_nolabels";
   const f=R.frames[R.i];
   ctx.clearRect(0,0,W,H);
+  R.pogingen=0;R.gelukt=0;
   const tx0=Math.floor(ox/TEGEL), tx1=Math.floor((ox+W)/TEGEL);
   const ty0=Math.floor(oy/TEGEL), ty1=Math.floor((oy+H)/TEGEL);
+  R.verwacht=(tx1-tx0+1)*(ty1-ty0+1);
   const max=Math.pow(2,ZOOM);
   for(let tx=tx0;tx<=tx1;tx++) for(let ty=ty0;ty<=ty1;ty++){
     if(ty<0||ty>=max) continue;
@@ -1254,7 +1259,7 @@ async function radarLaden(){
     const straks=(d.radar&&d.radar.nowcast?d.radar.nowcast:[]).map(f=>({time:f.time,path:f.path,toekomst:true}));
     R.frames=verleden.concat(straks);
     if(!R.frames.length){mld.textContent="Geen radarbeelden beschikbaar.";return;}
-    R.i=Math.max(0,verleden.length-1);
+    R.i=Math.max(0,verleden.length-1); R.terug=false;
     const sch=document.getElementById("rschuif");
     sch.max=R.frames.length-1; sch.value=R.i;
     const nieuwste=verleden.length?verleden[verleden.length-1].time*1000:0;

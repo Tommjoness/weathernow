@@ -2,6 +2,7 @@ const {laadKern}=require("./kern.js");
 const {bouw}=require("./data.js");
 
 let goed=0, fout=0;
+const norm=t=>String(t==null?"":t).replace(/\u00a0/g," ");
 function check(naam,voorwaarde,extra){
   if(voorwaarde){goed++;console.log("  ok   "+naam);}
   else{fout++;console.log("  FOUT "+naam+(extra?"   -> "+extra:""));}
@@ -57,7 +58,10 @@ function brief(opties,breedte){
   const {api,bak}=laadKern(breedte);
   Object.assign(api.S,{d:bouw(opties),i0:14,op:Date.now(),lat:52.35,lon:5.26,label:"Test",dag:null,bereik:24});
   api.meters();api.briefing();api.nowcast();api.etmaal(14,24);api.dagen();api.nachten();
-  return {tekst:bak.brief.innerHTML.replace(/<[^>]+>/g,""),bak:bak,api:api};
+  const proxy=new Proxy(bak,{get:(o,k)=>{const e=o[k];if(!e)return e;
+    return {get textContent(){return norm(e.textContent);},get innerHTML(){return norm(e.innerHTML);},
+            getAttribute:x=>e.getAttribute(x)};}});
+  return {tekst:norm(bak.brief.innerHTML).replace(/<[^>]+>/g,""),bak:proxy,api:api};
 }
 {
   const droog=brief({pp:()=>5,pr:()=>0,som:0}).tekst;
@@ -229,6 +233,17 @@ groep("Eenheden");
   const tekst=alles.join(" ");
   check("snelheid overal als km/u geschreven",!/km per uur/.test(tekst));
   check("percentage overal met het teken geschreven",!/\d\s?procent/.test(tekst));
+  // getal en eenheid mogen niet over twee regels breken
+  const ruw=[];
+  for(const [,opties] of scenarios){
+    const {api:a4}=laadKern();
+    Object.assign(a4.S,{d:bouw(opties),op:Date.now(),lat:52.35,lon:5.26,label:"T",dag:null,bereik:24});
+    a4.S.i0=a4.S.d.hourly.time.findIndex(t=>t.slice(0,13)===a4.S.d.current.time.slice(0,13));
+    a4.meters();a4.briefing();
+  }
+  const html=require("fs").readFileSync(require("path").join(__dirname,"..","index.html"),"utf8");
+  check("er is een functie die getal en eenheid aan elkaar houdt",/const nbsp=/.test(html));
+  check("de onderschriften lopen via die functie",(html.match(/zetTekst\(/g)||[]).length>=8);
 }
 
 /* 9. opmaak: variabelen die gebruikt worden moeten ook bestaan */
