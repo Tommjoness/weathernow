@@ -33,6 +33,14 @@ De service worker en het installeren als app werken alleen via https.
 
 Zon- en maanstand worden lokaal berekend, niet opgehaald.
 
+De gratis laag van RainViewer levert alleen gemeten radarbeelden. De sleutel
+`nowcast` staat wel in de JSON maar blijft leeg, want vooruitberekende beelden
+zijn een betaalde functie. De app toont daarom vrijwel nooit stappen met het
+label "verwachting". Dat is geen storing.
+
+Bronvermelding is een voorwaarde bij RainViewer, CARTO en OpenStreetMap en
+staat in de voettekst van de app. Laat die staan.
+
 ## Testen
 
     npm test

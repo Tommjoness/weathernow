@@ -244,6 +244,13 @@ groep("Eenheden");
   const html=require("fs").readFileSync(require("path").join(__dirname,"..","index.html"),"utf8");
   check("er is een functie die getal en eenheid aan elkaar houdt",/const nbsp=/.test(html));
   check("de onderschriften lopen via die functie",(html.match(/zetTekst\(/g)||[]).length>=8);
+  for(const bron of ["Open-Meteo","RainViewer","CARTO","OpenStreetMap"])
+    check("voettekst vermeldt "+bron,html.includes(bron));
+  // niets mag horizontaal buiten beeld vallen
+  const stijl=html.slice(html.indexOf("<style>"),html.indexOf("</style>"));
+  check("pagina kan niet zijwaarts schuiven",/overflow-x:clip/.test(stijl));
+  check("knoppenbalk krijgt de schermbreedte op de telefoon",/\.mastright\{[^}]*width:100%/.test(stijl));
+  check("knoppenbalk breekt af op smalle schermen",/max-width:430px\)\{[\s\S]*?flex-wrap:wrap/.test(stijl));
 }
 
 /* 9. opmaak: variabelen die gebruikt worden moeten ook bestaan */
