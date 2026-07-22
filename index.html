@@ -117,9 +117,9 @@
   /* sectiekop */
   h2{font-family:var(--sans);font-weight:500;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
      color:var(--ink-25);margin:44px 0 0;padding-bottom:10px;border-bottom:1px solid var(--ink);
-     display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+     display:flex;justify-content:space-between;align-items:flex-end;gap:10px 16px;flex-wrap:wrap}
   h2 .r{font-family:var(--mono);letter-spacing:0;text-transform:none;font-size:11.5px;color:var(--ink-45);
-        display:flex;gap:18px;align-items:center}
+        display:flex;gap:8px 18px;align-items:center;flex-wrap:wrap}
   h2 button{padding:4px 9px;font-size:9.5px}
 
   /* dagmodule */
@@ -134,6 +134,11 @@
   .day.on{box-shadow:inset 2px 0 0 var(--carmine)}
   .day.on .dname{font-weight:500}
   .dname{font-size:14.5px;letter-spacing:.01em;white-space:nowrap}
+  .row.kop{border-bottom:1px solid var(--ink);padding:0 0 7px;cursor:default}
+  .row.kop:hover{background:none}
+  .row.kop>*{font-family:var(--sans)!important;font-weight:500!important;font-size:9.5px!important;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink-25)!important;white-space:nowrap}
+  .row.kop .bar,.row.kop .sbar{background:none}
   .dcond{color:var(--ink-45);font-size:13.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .dmin,.dmax{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
   .dmin{color:var(--ink-45);text-align:right}
@@ -142,7 +147,7 @@
   .bar i{position:absolute;top:-1px;height:3px;background:var(--ink)}
   .ico{color:var(--ink-70)}
 
-  .night{grid-template-columns:104px 52px 1fr 108px 182px;gap:16px}
+  .night{grid-template-columns:104px 52px minmax(40px,1fr) 104px max-content;gap:16px}
   .score{font-family:var(--mono);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
   .sbar{height:1px;background:var(--rule);position:relative}
   .sbar i{position:absolute;top:-1px;height:3px}
@@ -168,7 +173,7 @@
     .day{grid-template-columns:88px 22px 1fr 40px 38px 42px;gap:8px}
     .dname{font-size:12.5px}
     .dcond{display:none}
-    .night{grid-template-columns:74px 42px 1fr 92px;gap:10px}
+    .night{grid-template-columns:70px 40px minmax(20px,1fr) max-content;gap:9px}
     .nmeta.wide{display:none}
     input[type=text]{width:136px}
     .mast{gap:14px}
@@ -218,8 +223,8 @@
     <div class="stats">
       <div class="stat"><div class="eyebrow">Wind</div><div class="sval" id="wind">--</div><div class="ssub" id="windsub">&nbsp;</div></div>
       <div class="stat"><div class="eyebrow">Windstoten</div><div class="sval" id="gust">--</div><div class="ssub" id="gustsub">&nbsp;</div></div>
-      <div class="stat"><div class="eyebrow">Neerslag nu</div><div class="sval" id="prec">--</div><div class="ssub" id="precsub">&nbsp;</div></div>
-      <div class="stat"><div class="eyebrow">Kans komend uur</div><div class="sval" id="pop">--</div><div class="ssub" id="popsub">&nbsp;</div></div>
+      <div class="stat"><div class="eyebrow">Neerslag afgelopen uur</div><div class="sval" id="prec">--</div><div class="ssub" id="precsub">&nbsp;</div></div>
+      <div class="stat"><div class="eyebrow">Neerslagkans komend uur</div><div class="sval" id="pop">--</div><div class="ssub" id="popsub">&nbsp;</div></div>
       <div class="stat"><div class="eyebrow">Luchtvochtigheid</div><div class="sval" id="hum">--</div><div class="ssub" id="humsub">&nbsp;</div></div>
       <div class="stat"><div class="eyebrow">Luchtdruk</div><div class="sval" id="pres">--</div><div class="ssub" id="pressub">&nbsp;</div></div>
       <div class="stat"><div class="eyebrow">Bewolking</div><div class="sval" id="cloud">--</div><div class="ssub" id="cloudsub">&nbsp;</div></div>
@@ -240,10 +245,10 @@
     <div id="nctext"></div>
     <svg id="nc" viewBox="0 0 900 60" width="100%" role="img" aria-label="Neerslag per kwartier"></svg>
 
-    <h2><span>Zeven dagen</span></h2>
+    <h2><span>Zeven dagen</span><span class="r">kans is de grootste kans op neerslag die dag</span></h2>
     <div id="days"></div>
 
-    <h2><span>Nachtzicht</span><span class="r" id="moonlab"></span></h2>
+    <h2><span>Nachtzicht</span><span class="r"><span>10 is helder en donker</span><span id="moonlab"></span></span></h2>
     <div id="nights"></div>
 
     <h2><span>Luchtkwaliteit en pollen</span></h2>
@@ -488,15 +493,20 @@ function meters(){
     : "In drie uur "+nl(Math.abs(dp))+" hPa "+(dp>0?"gestegen":"gedaald")+".";
 
   set("cloud",c.cloud_cover+"<s>%</s>");
+  const cc=c.cloud_cover;
+  const bew = cc>=95?"Vrijwel geheel bewolkt":cc>=70?"Zwaar bewolkt":cc>=40?"Half bewolkt"
+            : cc>=15?"Overwegend zonnig":"Vrijwel onbewolkt";
   const pu=piek("uv_index",0);
-  document.getElementById("cloudsub").textContent = !pu||pu.v<0.5 ? "Vandaag geen noemenswaardige UV."
-    : "De UV-index "+(pu.t>nu?"piekt":"piekte")+" op "+nl(pu.v)+" rond "+hhmm(pu.t)+".";
+  document.getElementById("cloudsub").textContent = bew+(
+    (!pu||pu.v<0.5) ? ", nauwelijks UV vandaag."
+    : ", de UV-index "+(pu.t>nu?"piekt":"piekte")+" op "+nl(pu.v)+" rond "+hhmm(pu.t)+".");
 
   const v=h.visibility?h.visibility[i]:null;
   set("vis",v==null?"–":(v>=10000?"10+":nl(v/1000))+"<s>km</s>");
   document.getElementById("vissub").textContent = v==null ? "Niet beschikbaar."
     : v<1000 ? "Slecht zicht, minder dan een kilometer."
-    : v<4000 ? "Beperkt zicht." : "Goed zicht, meer dan tien kilometer.";
+    : v<4000 ? "Beperkt zicht."
+    : v<10000 ? "Redelijk zicht." : "Goed zicht, meer dan tien kilometer.";
 }
 
 /* ---------- briefingregel ---------- */
@@ -508,6 +518,9 @@ function briefing(){
   // eerste natte uur en het einde daarvan
   let eerste=-1;
   for(let k=i+1;k<eind;k++){ if((h.precipitation_probability[k]??0)>=50||(h.precipitation[k]??0)>=0.3){eerste=k;break;} }
+  // hoogste kans in hetzelfde venster, ook als die onder de drempel blijft
+  let kmax=-1,kv=0;
+  for(let k=i+1;k<eind;k++){ const v=h.precipitation_probability[k]??0; if(v>kv){kv=v;kmax=k;} }
 
   let zin1;
   if(c.precipitation>0.05){
@@ -522,7 +535,11 @@ function briefing(){
     const wat=(soort==="regen"||soort==="sneeuw"||soort==="onweer")?txt(h.weather_code[eerste]).toLowerCase():"neerslag";
     const kans=h.precipitation_probability[eerste]??0;
     const tot = stop>0 ? " tot "+hhmm(h.time[stop]) : " tot minstens "+hhmm(h.time[eind-1]);
-    zin1 = "Het blijft droog tot <b>"+hhmm(h.time[eerste])+"</b>, daarna is er "+kans+"% kans op "+wat+tot+".";
+    zin1 = kans>=30
+      ? "Het blijft droog tot <b>"+hhmm(h.time[eerste])+"</b>, daarna is er "+kans+"% kans op "+wat+tot+"."
+      : "Het blijft droog tot <b>"+hhmm(h.time[eerste])+"</b>, daarna valt er wat "+wat+tot+".";
+  }else if(kmax>0&&kv>=25){
+    zin1 = "Het blijft grotendeels droog, alleen rond <b>"+hhmm(h.time[kmax])+"</b> is er "+kv+"% kans op een bui.";
   }else{
     zin1 = "De komende <b>twaalf uur</b> blijft het droog.";
   }
@@ -646,7 +663,7 @@ function etmaal(start,n){
     pts.push(x(i)+","+y(v));
     if(i%3===0){
       dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="2.2" fill="${INK}"/>`;
-      labs+=`<text x="${x(i)}" y="${y(v)-11}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="15">${Math.round(v)}°</text>`;
+      labs+=`<text x="${x(i)+(i===0?13:0)}" y="${y(v)-11}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="15">${Math.round(v)}°</text>`;
       ticks+=`<text x="${x(i)}" y="${pb+22}" text-anchor="middle" fill="${INK45}" font-family="DM Mono,monospace" font-size="10.5">${L[i]}</text>`;
       if(P[i]>0) ticks+=`<text x="${x(i)}" y="${pb+37}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="9.5">${P[i]}%</text>`;
     }
@@ -673,7 +690,7 @@ function etmaal(start,n){
     : new Date(S.d.daily.time[dg]+"T12:00:00").toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+", per uur";
   const di=dg==null?0:dg;
   document.getElementById("suntimes").innerHTML=(day.sunrise[di]&&day.sunset[di])
-    ? "zonsopkomst "+hhmm(day.sunrise[di])+" · zonsondergang "+hhmm(day.sunset[di])+" · "+daglengte(di)
+    ? (dg==null?"vandaag: ":"")+"zonsopkomst "+hhmm(day.sunrise[di])+" · zonsondergang "+hhmm(day.sunset[di])+" · "+daglengte(di)
     : daglengte(di);
   document.getElementById("back").style.display=dg==null?"none":"inline-block";
 }
@@ -753,6 +770,15 @@ function nowcast(){
 }
 
 /* ---------- zeven dagen ---------- */
+function restkans(){
+  const h=S.d.hourly,dag=S.d.daily.time[0],nu=S.d.current.time;
+  let m=0;
+  for(let k=0;k<h.time.length;k++){
+    if(h.time[k].slice(0,10)!==dag||h.time[k]<=nu) continue;
+    m=Math.max(m,h.precipitation_probability[k]??0);
+  }
+  return Math.round(m);
+}
 function dagen(){
   const day=S.d.daily;
   const lo=Math.min(...day.temperature_2m_min),hi=Math.max(...day.temperature_2m_max),sp=(hi-lo)||1;
@@ -767,10 +793,14 @@ function dagen(){
       <div class="dmin">${Math.round(l)}°</div>
       <div class="bar"><i style="left:${(l-lo)/sp*100}%;width:${Math.max(3,(hh-l)/sp*100)}%"></i></div>
       <div class="dmax">${Math.round(hh)}°</div>
-      <div class="drain">${day.precipitation_probability_max[i]??0}%</div></div>`;
+      <div class="drain">${i===0?restkans():(day.precipitation_probability_max[i]??0)}%</div></div>`;
   });
-  const c=document.getElementById("days");c.innerHTML=out;
-  c.querySelectorAll(".day").forEach(el=>{
+  const kop=`<div class="row day kop">
+      <div class="dname">Dag</div><div></div><div class="dcond">Verwachting</div>
+      <div class="dmin">Min</div><div class="bar"></div><div class="dmax">Max</div>
+      <div class="drain">Kans</div></div>`;
+  const c=document.getElementById("days");c.innerHTML=kop+out;
+  c.querySelectorAll(".day:not(.kop)").forEach(el=>{
     const kies=()=>{
       const i=+el.dataset.i;S.dag=i;
       let st=S.d.hourly.time.findIndex(t=>t.slice(0,10)===S.d.daily.time[i]);
@@ -822,7 +852,10 @@ function nachten(){
       <div class="nmeta">${Math.round(cw)}% bewolking</div>
       <div class="nmeta wide">${venster||"geen opklaringen"}, maan ${Math.round(mn.ill*100)}%</div></div>`;
   }
-  document.getElementById("nights").innerHTML=out||'<div class="msg">Geen nachtdata beschikbaar.</div>';
+  const kopN=`<div class="row night kop">
+      <div class="dname">Nacht</div><div class="score">Score 0-10</div><div class="sbar"></div>
+      <div class="nmeta">Bewolking</div><div class="nmeta wide">Opklaringen en maan</div></div>`;
+  document.getElementById("nights").innerHTML=(out?kopN+out:"")||'<div class="msg">Geen nachtdata beschikbaar.</div>';
   const m=maan(new Date());
   document.getElementById("moonlab").innerHTML=maanschijf(m.ill,m.fase)+" &nbsp;"+m.naam+", "+Math.round(m.ill*100)+" procent verlicht";
 }
