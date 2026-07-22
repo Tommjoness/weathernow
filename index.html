@@ -65,6 +65,8 @@
     text-transform:uppercase;border-radius:0}
   button:hover{border-color:var(--ink);color:var(--ink)}
   button:focus-visible{outline:1px solid var(--ink);outline-offset:2px}
+  button:disabled{color:var(--ink-25);border-color:var(--rule);cursor:default}
+  .tools button+button{border-left:none}
   #stamp{font-family:var(--mono);font-size:11px;color:var(--ink-45);font-variant-numeric:tabular-nums}
   #stamp.oud{color:var(--carmine)}
   .results{position:absolute;top:36px;left:0;right:0;z-index:30;background:var(--sheet);
@@ -124,11 +126,11 @@
   /* tabellen */
   .row{display:grid;align-items:center;border-bottom:1px solid var(--rule-soft);padding:11px 0}
   .row:last-child{border-bottom:none}
-  .day{grid-template-columns:78px 26px 1fr 54px 148px 46px 52px;gap:16px;cursor:pointer}
+  .day{grid-template-columns:106px 26px 1fr 54px 140px 46px 52px;gap:16px;cursor:pointer}
   .day:hover{background:#FAFBFA}
   .day.on{box-shadow:inset 2px 0 0 var(--carmine)}
   .day.on .dname{font-weight:500}
-  .dname{font-size:14.5px;letter-spacing:.01em}
+  .dname{font-size:14.5px;letter-spacing:.01em;white-space:nowrap}
   .dcond{color:var(--ink-45);font-size:13.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .dmin,.dmax{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
   .dmin{color:var(--ink-45);text-align:right}
@@ -137,11 +139,11 @@
   .bar i{position:absolute;top:-1px;height:3px;background:var(--ink)}
   .ico{color:var(--ink-70)}
 
-  .night{grid-template-columns:104px 52px 1fr 108px 150px;gap:16px}
+  .night{grid-template-columns:104px 52px 1fr 108px 182px;gap:16px}
   .score{font-family:var(--mono);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
   .sbar{height:1px;background:var(--rule);position:relative}
   .sbar i{position:absolute;top:-1px;height:3px}
-  .nmeta{font-size:12.5px;color:var(--ink-45);text-align:right;font-variant-numeric:tabular-nums}
+  .nmeta{font-size:12.5px;color:var(--ink-45);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
   .msg{padding:16px 0;color:var(--ink-45);border-top:1px solid var(--rule);margin-top:24px}
   .msg.err{color:var(--carmine);border-color:var(--carmine)}
@@ -160,7 +162,8 @@
     .stat:nth-child(2n){border-right:none;padding-right:0}
     .stat:not(:nth-child(4n+1)){padding-left:0}
     .stat:nth-child(2n){padding-left:22px}
-    .day{grid-template-columns:64px 22px 1fr 42px 40px 44px;gap:9px}
+    .day{grid-template-columns:88px 22px 1fr 40px 38px 42px;gap:8px}
+    .dname{font-size:12.5px}
     .dcond{display:none}
     .night{grid-template-columns:74px 42px 1fr 92px;gap:10px}
     .nmeta.wide{display:none}
@@ -183,6 +186,7 @@
       <div class="tools">
         <input type="text" id="q" placeholder="Plaats zoeken" autocomplete="off" aria-label="Plaats zoeken">
         <button id="here" title="Gebruik je huidige locatie">Mijn locatie</button>
+        <button id="ververs" title="Gegevens opnieuw ophalen">Ververs</button>
         <div class="results" id="res" role="listbox"></div>
       </div>
       <span id="stamp"></span>
@@ -307,16 +311,19 @@ function icon(code,isDay,size){
 function pijl(deg,size){
   const s=size||12;
   return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true" style="vertical-align:baseline">
-    <g transform="rotate(${(deg+180)%360} 12 12)"><path d="M12 4 L16.5 20 L12 16.6 L7.5 20 Z" fill="${INK45}"/></g></svg>`;
+    <g transform="rotate(${(deg+180)%360} 12 12)"><path d="M12 4 L16.5 20 L12 16.6 L7.5 20 Z" fill="${INK}"/></g></svg>`;
 }
 function maanschijf(ill,fase,size){
   const s=size||13,r=6.6;
+  if(ill<0.02) return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true" style="vertical-align:-2px">
+    <circle cx="12" cy="12" r="${r}" fill="none" stroke="${INK25}" stroke-width="1"/></svg>`;
+  const rx=r*Math.cos(2*Math.PI*fase);
   const wassend=fase<0.5;
-  const k=(1-2*Math.abs(ill-0.5))*r;
-  const sweep1=wassend?1:0, sweep2=(ill>0.5)===wassend?1:0;
+  const buiten=wassend?1:0;
+  const binnen=((rx>0)===wassend)?0:1;
   return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true" style="vertical-align:-2px">
     <circle cx="12" cy="12" r="${r}" fill="none" stroke="${INK25}" stroke-width="1"/>
-    <path d="M12 ${12-r} A ${r} ${r} 0 0 ${sweep1} 12 ${12+r} A ${k.toFixed(2)} ${r} 0 0 ${sweep2} 12 ${12-r} z" fill="${INK}"/></svg>`;
+    <path d="M 12 ${12-r} A ${r} ${r} 0 0 ${buiten} 12 ${12+r} A ${Math.abs(rx).toFixed(3)} ${r} 0 0 ${binnen} 12 ${12-r} Z" fill="${INK}"/></svg>`;
 }
 
 /* ---------- maanfase ---------- */
@@ -353,10 +360,10 @@ async function load(lat,lon,label,stil){
   const f=basis+"&minutely_15=precipitation&past_hours=3"
     +"&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,precipitation_probability,"
     +"precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,"
-    +"pressure_msl,is_day";
+    +"uv_index,pressure_msl,is_day";
   const fmin=basis+"&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,"
     +"precipitation_probability,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,"
-    +"wind_gusts_10m,pressure_msl,is_day";
+    +"wind_gusts_10m,uv_index,pressure_msl,is_day";
   const e="https://ensemble-api.open-meteo.com/v1/ensemble?latitude="+lat+"&longitude="+lon
     +"&hourly=temperature_2m&models=icon_seamless&forecast_days=3&timezone=auto";
   const a="https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+lat+"&longitude="+lon
@@ -411,26 +418,64 @@ function tekenAlles(){
 }
 function set(id,html){document.getElementById(id).innerHTML=html;}
 
+function piek(veld,dagIndex){
+  const h=S.d.hourly,dag=S.d.daily.time[dagIndex||0];
+  let bv=-Infinity,bt=null;
+  for(let i=0;i<h.time.length;i++){
+    if(h.time[i].slice(0,10)!==dag) continue;
+    const v=h[veld]?h[veld][i]:null;
+    if(v==null) continue;
+    if(v>bv){bv=v;bt=h.time[i];}
+  }
+  return bt?{v:bv,t:bt}:null;
+}
+function wanneer(p){
+  if(!p) return "";
+  const verleden=p.t<S.d.current.time;
+  return (verleden?"was rond ":"rond ")+hhmm(p.t);
+}
+
 function meters(){
   const c=S.d.current,h=S.d.hourly,i=S.i0,day=S.d.daily;
   const dir=DIRS[Math.round(c.wind_direction_10m/22.5)%16],b=bft(c.wind_speed_10m);
   set("wind",Math.round(c.wind_speed_10m)+"<s>km/u</s> "+pijl(c.wind_direction_10m));
   document.getElementById("windsub").textContent=b+" Bft, "+BFTNAAM[b]+" uit het "+dir;
+
   set("gust",Math.round(c.wind_gusts_10m)+"<s>km/u</s>");
-  document.getElementById("gustsub").textContent="Maximaal vandaag "+Math.round(day.wind_gusts_10m_max[0])+" km/u";
+  const pg=piek("wind_gusts_10m",0);
+  document.getElementById("gustsub").textContent=pg
+    ? "Hoogste vandaag "+Math.round(pg.v)+" km/u "+wanneer(pg)
+    : "Hoogste vandaag "+Math.round(day.wind_gusts_10m_max[0])+" km/u";
+
   set("prec",c.precipitation.toFixed(1)+"<s>mm</s>");
-  document.getElementById("precsub").textContent="Vandaag totaal "+day.precipitation_sum[0].toFixed(1)+" mm";
+  const pn=piek("precipitation",0);
+  document.getElementById("precsub").textContent="Vandaag totaal "+day.precipitation_sum[0].toFixed(1)+" mm"
+    +((pn&&pn.v>=0.1)?", meeste "+wanneer(pn):"");
+
   set("pop",(h.precipitation_probability[i+1]??0)+"<s>%</s>");
-  document.getElementById("popsub").textContent="Hoogste kans vandaag "+(day.precipitation_probability_max[0]??0)+"%";
+  const pp=piek("precipitation_probability",0);
+  document.getElementById("popsub").textContent=pp
+    ? "Hoogste kans vandaag "+Math.round(pp.v)+"% "+wanneer(pp)
+    : "Hoogste kans vandaag "+(day.precipitation_probability_max[0]??0)+"%";
+
   set("hum",c.relative_humidity_2m+"<s>%</s>");
-  const sp=c.temperature_2m-(h.dew_point_2m[i]??c.temperature_2m);
-  document.getElementById("humsub").textContent=sp<2?"Spreiding "+sp.toFixed(1)+"°, kans op mist":"Spreiding "+sp.toFixed(1)+"° met het dauwpunt";
+  const dew=h.dew_point_2m[i]??c.temperature_2m, sp=c.temperature_2m-dew;
+  const basis=Math.round(sp*125/50)*50;
+  document.getElementById("humsub").textContent=sp<2
+    ? "Nog "+sp.toFixed(1)+"° tot verzadiging, kans op mist"
+    : sp.toFixed(1)+"° boven het dauwpunt, wolkbasis ruwweg "+basis+" m";
+
   set("pres",Math.round(c.pressure_msl)+"<s>hPa</s>");
   const p3=h.pressure_msl[i-3],dp=(p3!=null)?c.pressure_msl-p3:null;
   document.getElementById("pressub").textContent=dp==null?"Geen tendens beschikbaar":
     (dp>0.6?"Stijgend, ":dp<-0.6?"Dalend, ":"Stabiel, ")+(dp>=0?"+":"")+dp.toFixed(1)+" hPa in drie uur";
+
   set("cloud",c.cloud_cover+"<s>%</s>");
-  document.getElementById("cloudsub").textContent="Hoogste UV-index vandaag "+(day.uv_index_max[0]==null?"onbekend":day.uv_index_max[0].toFixed(1));
+  const pu=piek("uv_index",0);
+  document.getElementById("cloudsub").textContent=pu
+    ? "Hoogste UV-index "+pu.v.toFixed(1)+" "+wanneer(pu)
+    : "Hoogste UV-index vandaag "+(day.uv_index_max[0]==null?"onbekend":day.uv_index_max[0].toFixed(1));
+
   const v=h.visibility?h.visibility[i]:null;
   set("vis",v==null?"–":(v>=10000?"10+":(v/1000).toFixed(1))+"<s>km</s>");
   document.getElementById("vissub").textContent=v==null?"Niet beschikbaar":v<1000?"Slecht zicht":v<4000?"Beperkt zicht":"Goed zicht";
@@ -527,10 +572,8 @@ function etmaal(start,n){
     const xx=x(g.i)-cw/2;
     balk+=`<line x1="${xx}" y1="${by-6}" x2="${xx}" y2="${by+bh+4}" stroke="${INK}" stroke-width="1"/>`;
     if(tijd) balk+=`<text x="${xx+(g.op?4:-4)}" y="${by-10}" text-anchor="${g.op?"start":"end"}" fill="${INK45}"
-      font-family="DM Mono,monospace" font-size="10.5">${g.op?"opkomst ":"ondergang "}${hhmm(tijd)}</text>`;
+      font-family="DM Mono,monospace" font-size="10.5">${g.op?"zonsopkomst ":"zonsondergang "}${hhmm(tijd)}</text>`;
   });
-  balk+=`<text x="${pl-10}" y="${by+11}" text-anchor="end" fill="${INK25}" font-family="Instrument Sans,sans-serif"
-    font-size="9.5" letter-spacing="1.2">DAG</text>`;
 
   /* nu-markering */
   let nu="";
@@ -569,7 +612,7 @@ function etmaal(start,n){
    `${balk}${gitter}${bandpol}${bars}
     <polyline points="${pts.join(" ")}" fill="none" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
     ${dots}${labs}${ticks}${nu}
-    <text x="${W-pr}" y="${pb+37}" text-anchor="end" fill="${INK25}" font-family="Instrument Sans,sans-serif" font-size="9.5" letter-spacing="1">
+    <text x="${W-pr}" y="${pb+54}" text-anchor="end" fill="${INK25}" font-family="Instrument Sans,sans-serif" font-size="9.5" letter-spacing="1">
       ${band?"GRIJS VLAK: 80 PROCENT VAN DE ENSEMBLELEDEN":"TEAL: NEERSLAGKANS"}</text>
     <g id="scrub" style="display:none"></g>
     <rect id="hit" x="${pl-cw/2}" y="${pt-14}" width="${iw+cw}" height="${ih+20}" fill="transparent" style="cursor:crosshair"/>`;
@@ -582,7 +625,7 @@ function etmaal(start,n){
     : "Uurverloop "+new Date(S.d.daily.time[dg]+"T12:00:00").toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
   const di=dg==null?0:dg;
   document.getElementById("suntimes").innerHTML=
-    "opkomst "+hhmm(day.sunrise[di])+" · ondergang "+hhmm(day.sunset[di])+" · "+daglengte(di);
+    "zonsopkomst "+hhmm(day.sunrise[di])+" · zonsondergang "+hhmm(day.sunset[di])+" · "+daglengte(di);
   document.getElementById("back").style.display=dg==null?"none":"inline-block";
 }
 function daglengte(i){
@@ -644,6 +687,7 @@ function nowcast(){
   });
   el.innerHTML=out;
   const eerste=P.findIndex(v=>v>=0.1),som=P.reduce((a,b)=>a+b,0);
+  el.style.display=som<0.05?"none":"block";
   if(P[0]>=0.1){
     const stop=P.findIndex((v,k)=>k>0&&v<0.1);
     tx.textContent=stop>0?"Neerslag op dit moment, droog vanaf ongeveer "+T[stop].slice(11,16)+"."
@@ -831,6 +875,14 @@ res.addEventListener("click",e=>{
   load(el.dataset.lat,el.dataset.lon,el.dataset.nm);
 });
 document.addEventListener("click",e=>{if(!e.target.closest(".tools"))res.classList.remove("on");});
+
+document.getElementById("ververs").addEventListener("click",async()=>{
+  if(S.lat==null) return;
+  const b=document.getElementById("ververs"),oud=b.textContent;
+  b.disabled=true;b.textContent="Bezig";
+  await load(S.lat,S.lon,S.label,true);
+  b.disabled=false;b.textContent=oud;
+});
 
 document.getElementById("here").addEventListener("click",()=>{
   const st=document.getElementById("state");
