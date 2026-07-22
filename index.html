@@ -1049,9 +1049,11 @@ function nachten(){
     const mn=maan(new Date(naarUTC(ss.slice(0,10)+"T23:30")));
 
     // maan boven of onder de horizon per uur
-    const maanOp=TT.map(t=>maanHoogte(naarUTC(t),S.lat,S.lon)>0);
-    const donkerUren=TT.filter((t,i)=>!maanOp[i]).length;
-    const maanDeel=1-donkerUren/TT.length;      // aandeel van de nacht met maan boven de horizon
+    // hoe hoger de maan staat, hoe meer licht hij geeft; laag aan de horizon stoort hij nauwelijks
+    const maanH=TT.map(t=>maanHoogte(naarUTC(t),S.lat,S.lon));
+    const maanOp=maanH.map(h2=>h2>0);
+    const maanWeging=maanH.map(h2=>h2<=0?0:Math.min(1,Math.sin(h2*Math.PI/180)/Math.sin(45*Math.PI/180)));
+    const maanDeel=maanWeging.reduce((a,b)=>a+b,0)/maanWeging.length;
 
     let sc=(1-cw/100)*10;
     if(hu>93) sc-=1.5;
@@ -1063,7 +1065,7 @@ function nachten(){
     // langste aaneengesloten venster met weinig bewolking en maan onder de horizon
     let run=0,bs=-1,br=0,bstart=-1;
     for(let i=0;i<C.length;i++){
-      const goed = C[i]<35 && (!maanOp[i] || mn.ill<0.25);
+      const goed = C[i]<35 && (maanWeging[i]*mn.ill < 0.2);
       if(goed){ if(run===0) bs=i; run++; if(run>br){br=run;bstart=bs;} } else run=0;
     }
     let venster=null;
@@ -1255,7 +1257,9 @@ async function radarLaden(){
     R.i=Math.max(0,verleden.length-1);
     const sch=document.getElementById("rschuif");
     sch.max=R.frames.length-1; sch.value=R.i;
-    mld.textContent="";
+    const nieuwste=verleden.length?verleden[verleden.length-1].time*1000:0;
+    const oud=Math.round((Date.now()-nieuwste)/60000);
+    mld.textContent = oud>25 ? "Het nieuwste radarbeeld is "+oud+" minuten oud." : "";
     radarTeken();
   }catch(e){
     mld.textContent="Radar niet beschikbaar.";

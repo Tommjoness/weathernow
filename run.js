@@ -156,6 +156,21 @@ groep("Tabellen");
   check("nachtzicht toont maantijden",/maan op|maan onder|maan /.test(bak.nights.innerHTML));
 }
 
+/* 7c. nachtzicht reageert op bewolking en op de stand van de maan */
+groep("Nachtzicht");
+{
+  const helder=brief({cc:(u)=>u<6||u>20?8:60});
+  const bewolkt=brief({cc:()=>100});
+  const rij=h2=>[...h2.matchAll(/class="score"[^>]*>([^<]*)<[\s\S]*?class="nmeta wide">([^<]*)/g)].filter(m=>/^\d/.test(m[1]));
+  const rh=rij(helder.bak.nights.innerHTML), rb=rij(bewolkt.bak.nights.innerHTML);
+  const score=t=>parseFloat(String(t).replace(",","."));
+  check("heldere nacht geeft een hoge score",score(rh[0][1])>7,rh[0][1]);
+  check("bewolkte nacht geeft een lage score",score(rb[0][1])<1,rb[0][1]);
+  check("heldere nacht krijgt een waarneemvenster",/helder \d\d:\d\d/.test(rh[0][2]),rh[0][2]);
+  check("bewolkte nacht krijgt geen venster",/geen venster/.test(rb[0][2]),rb[0][2]);
+  check("maantijden staan er altijd bij",/maan \d\d:\d\d/.test(rh[0][2])&&/maan \d\d:\d\d/.test(rb[0][2]));
+}
+
 /* 8b. teksten noemen altijd een waarde en waar het kan een tijdstip */
 groep("Volledigheid van de teksten");
 {
