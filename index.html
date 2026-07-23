@@ -1185,7 +1185,7 @@ async function controle(){
 }
 
 /* ---------- neerslagradar ---------- */
-const R={frames:[],i:0,speelt:false,timer:null,host:"",geladen:{},pogingen:0,gelukt:0,verwacht:0,terug:false,wms:null};
+const R={frames:[],i:0,speelt:false,timer:null,host:"",geladen:{},pogingen:0,gelukt:0,verwacht:0,terug:false,wms:null,knmiMelding:""};
 const TEGEL=256, ZOOM=7;
 const R_AARDE=6378137, HALFRONDE=Math.PI*R_AARDE;
 const wereldGrootte=()=>TEGEL*Math.pow(2,ZOOM);
@@ -1282,7 +1282,10 @@ async function radarLaden(){
     sch.max=R.frames.length-1; sch.value=R.i;
     const nieuwste=verleden.length?verleden[verleden.length-1].time*1000:0;
     const oud=Math.round((Date.now()-nieuwste)/60000);
-    mld.textContent = oud>25 ? "Het nieuwste radarbeeld is "+oud+" minuten oud." : "";
+    const regels=[];
+    if(oud>25) regels.push("Het nieuwste radarbeeld is "+oud+" minuten oud.");
+    if(R.knmiMelding) regels.push(R.knmiMelding);
+    mld.textContent=regels.join(" ");
     radarTeken();
   }catch(e){
     mld.textContent="Radar niet beschikbaar.";
@@ -1304,23 +1307,33 @@ document.getElementById("rspeel").addEventListener("click",()=>{
 
 // De gratis laag van RainViewer geeft geen verwachting. Voor Nederland vult het KNMI dat gat.
 async function knmiVerwachting(verleden){
-  R.wms=null;
+  R.wms=null; R.knmiMelding="";
   if(!inNederland(S.lat,S.lon)) return;
-  try{
-    const w=await j("/api/radarverwachting");
-    if(!w||!w.laag||!w.tijden||!w.tijden.length) return;
-    const nu=Date.now();
-    const laatste=verleden.length?verleden[verleden.length-1].time*1000:nu;
-    const stappen=w.tijden
-      .map(t=>({tijd:t,ms:Date.parse(t)}))
-      .filter(o=>isFinite(o.ms)&&o.ms>laatste&&o.ms<=nu+2*3600000)
-      .sort((a,b)=>a.ms-b.ms)
-      .map(o=>({time:Math.round(o.ms/1000),tijd:o.tijd,knmi:true,toekomst:true}));
-    if(!stappen.length) return;
-    R.wms=w;
-    R.frames=R.frames.concat(stappen);
-    document.getElementById("rschuif").max=R.frames.length-1;
-  }catch(e){ /* geen functie of geen antwoord: alleen gemeten beelden */ }
+  let w;
+  try{ w=await j("/api/radarverwachting"); }
+  catch(e){ return; }                       // functie staat er niet: stil verder
+  if(!w||!w.tijden||!w.tijden.length){
+    R.knmiMelding="Vooruitblik niet beschikbaar"+(w&&w.reden?" ("+w.reden+")":"")+".";
+    return;
+  }
+  const nu=Date.now();
+  const laatste=verleden.length?verleden[verleden.length-1].time*1000:nu;
+  const stappen=w.tijden
+    .map(t=>({tijd:t,ms:Date.parse(t)}))
+    .filter(o=>isFinite(o.ms)&&o.ms>laatste&&o.ms<=nu+2*3600000)
+    .sort((a,b)=>a.ms-b.ms)
+    .map(o=>({time:Math.round(o.ms/1000),tijd:o.tijd,knmi:true,toekomst:true}));
+  if(!stappen.length){
+    // het KNMI heeft wel data, maar niets dat verder reikt dan het laatste meetbeeld
+    R.knmiMelding = w.ouderdomMin!=null && w.ouderdomMin>30
+      ? "De vooruitblik van het KNMI loopt achter, het nieuwste beeld daar is "
+        +(w.ouderdomMin>2880?Math.round(w.ouderdomMin/1440)+" dagen":Math.round(w.ouderdomMin/60)+" uur")+" oud."
+      : "Op dit moment geen vooruitblik beschikbaar.";
+    return;
+  }
+  R.wms=w;
+  R.frames=R.frames.concat(stappen);
+  document.getElementById("rschuif").max=R.frames.length-1;
 }
 
 /* ---------- officiele waarschuwingen ---------- */
@@ -1459,11 +1472,18 @@ document.getElementById("here").addEventListener("click",()=>{
   if(!navigator.geolocation){st.style.display="block";st.className="msg err";st.textContent="Deze browser deelt geen locatie.";return;}
   st.style.display="block";st.className="msg";st.textContent="Locatie bepalen.";
   navigator.geolocation.getCurrentPosition(async p=>{
-    const la=p.coords.latitude,lo=p.coords.longitude;let nm="Huidige locatie";
+    const la=p.coords.latitude,lo=p.coords.longitude;let nm=null;
     try{
-      const g=await j("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+la+"&longitude="+lo+"&localityLanguage=nl");
-      nm=g.city||g.locality||g.principalSubdivision||nm;
+      const g=await j("/api/plaatsnaam?lat="+la.toFixed(4)+"&lon="+lo.toFixed(4));
+      nm=g&&g.naam||null;
     }catch(e){}
+    if(!nm){
+      try{
+        const g=await j("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+la+"&longitude="+lo+"&localityLanguage=nl");
+        nm=g.city||g.locality||g.principalSubdivision||null;
+      }catch(e){}
+    }
+    if(!nm) nm="Huidige locatie";
     q.value=nm;load(la,lo,nm);
   },()=>{st.className="msg err";st.textContent="Locatie geweigerd. Zoek hierboven een plaats.";});
 });

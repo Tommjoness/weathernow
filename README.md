@@ -61,3 +61,21 @@ ontbrekende data, en of de grafiek binnen zijn kader blijft op telefoon en deskt
 
 Na een wijziging het versienummer in `sw.js` ophogen, anders serveert de oude
 service worker de vorige versie.
+
+## KNMI-verwachting, wat je moet weten
+
+Geverifieerd tegen de capabilities van het KNMI op 23 juli 2026:
+
+    DATASET  radar_forecast_2.0
+    LAYERS   precipitation_nowcast
+    CRS      EPSG:3857 wordt ondersteund
+    tijd     <Dimension name="time" ...>begin/eind/PT5M</Dimension>
+
+De tijddimensie is een reeks over vele dagen, niet alleen de komende twee uur.
+Lees hem daarom van achteren naar voren: het laatste moment in de reeks is het
+nieuwste beschikbare beeld. Vanaf het begin lezen levert weken oude tijdstippen
+op, en die vallen allemaal weg in het filter.
+
+Op het moment van bouwen liep de anonieme WMS van het KNMI achter: het nieuwste
+beeld was drie weken oud. De app meldt dat zelf onder de radar. Wordt de bron
+weer bijgewerkt, dan verschijnt de vooruitblik vanzelf zonder aanpassing.
