@@ -23,7 +23,6 @@ De service worker en het installeren als app werken alleen via https.
 |---|---|---|
 | uur- en dagverwachting | api.open-meteo.com | mix van ECMWF en DWD ICON |
 | kwartierneerslag | api.open-meteo.com | alleen Europa en Noord-Amerika |
-| spreiding | ensemble-api.open-meteo.com | ICON, veertig leden, drie dagen |
 | luchtkwaliteit en pollen | air-quality-api.open-meteo.com | CAMS, pollen alleen in Europa |
 | plaatsnamen | geocoding-api.open-meteo.com | |
 | omgekeerd zoeken | api.bigdatacloud.net | bij Mijn locatie |
@@ -35,8 +34,15 @@ Zon- en maanstand worden lokaal berekend, niet opgehaald.
 
 De gratis laag van RainViewer levert alleen gemeten radarbeelden. De sleutel
 `nowcast` staat wel in de JSON maar blijft leeg, want vooruitberekende beelden
-zijn een betaalde functie. De app toont daarom vrijwel nooit stappen met het
-label "verwachting". Dat is geen storing.
+zijn een betaalde functie.
+
+Voor Nederland wordt dat gat gevuld met de neerslagverwachting van het KNMI,
+tot twee uur vooruit per vijf minuten. Die komt binnen als kaartbeeld via WMS.
+De functie `api/radarverwachting.js` haalt eenmalig op welke laag en welke
+tijdstappen beschikbaar zijn, omdat het KNMI geen CORS-headers meegeeft. De
+kaartbeelden zelf haalt de browser rechtstreeks op, want voor het tekenen van
+een afbeelding is geen CORS nodig. Buiten Nederland valt dit weg en zie je
+alleen gemeten beelden.
 
 Bronvermelding is een voorwaarde bij RainViewer, CARTO en OpenStreetMap en
 staat in de voettekst van de app. Laat die staan.
