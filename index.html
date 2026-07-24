@@ -786,11 +786,11 @@ function etmaal(start,n){
   }
   const M=(typeof window!=="undefined"&&window.innerWidth)?window.innerWidth<760:false;
 
-  const W=M?380:900, H=M?292:296, pl=M?26:44, pr=M?8:20, iw=W-pl-pr;
+  const W=M?380:900, H=M?292:296, pl=M?34:44, pr=M?10:20, iw=W-pl-pr;
   const by=M?20:22, bh=M?11:16;
   const pt=M?72:76, ih=M?166:160, pb=pt+ih;
-  const F={zon:M?10:10.5, nu:M?10:10, temp:M?13.5:15, uur:M?11:10.5, pre:M?10:9.5, grid:M?10:10.5};
-  const stap = n<=24 ? (M?4:3) : n<=48 ? (M?8:6) : (M?24:12);
+  const F={zon:M?10:10.5, nu:M?10:10, temp:M?12.5:15, uur:M?11:10.5, pre:M?10:9.5, grid:M?9.5:10.5};
+  const stap = n<=24 ? 3 : n<=48 ? 6 : (M?18:12);
 
   let mn=Math.min(...T),mx=Math.max(...T);
   mn=Math.floor(mn-1);mx=Math.ceil(mx+1);
@@ -854,10 +854,6 @@ function etmaal(start,n){
       bars+=`<rect x="${x(i)-cw*0.3}" y="${pb-hgt}" width="${cw*0.6}" height="${hgt}" fill="${TEAL}" fill-opacity=".16"/>`;
     }
     pts.push(x(i)+","+y(v));
-    if(i%stap===0){
-      dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="${M?1.9:2.2}" fill="${INK}"/>`;
-      labs+=`<text x="${x(i)+(i===0?(M?11:13):0)}" y="${y(v)-(M?9:11)}" text-anchor="middle" fill="${INK}" font-family="Bodoni Moda,serif" font-size="${F.temp}">${Math.round(v)}°</text>`;
-    }
     // bij een week loopt de as per dag, daarbinnen per paar uur
     const toonAs = n>48 ? L[i]==="12" : (i%stap===0);
     if(toonAs){
@@ -865,9 +861,57 @@ function etmaal(start,n){
       if(P[i]>0) ticks+=`<text x="${x(i)}" y="${pb+(M?35:37)}" text-anchor="middle" fill="${TEAL}" font-family="DM Mono,monospace" font-size="${F.pre}">${P[i]}%</text>`;
     }
   });
+
+  /* Temperatuurlabels.
+     Een vaste stap van zoveel uur zet het label soms net naast de piek, waardoor
+     het warmste moment van de dag geen cijfer krijgt en een lager punt wel.
+     Daarom eerst de echte pieken en dalen, dan het hoogste en laagste punt van
+     de reeks, en pas daarna de vaste stap als opvulling. Wat niet past valt weg. */
+  const soort=new Array(T.length).fill(0);            // 1 is piek, -1 is dal
+  for(let i=1;i<T.length-1;i++){
+    if(T[i]>=T[i-1]&&T[i]>T[i+1]) soort[i]=1;
+    if(T[i]<=T[i-1]&&T[i]<T[i+1]) soort[i]=-1;
+  }
+  if(T.length>1){
+    soort[0]=T[0]>=T[1]?1:-1;
+    soort[T.length-1]=T[T.length-1]>=T[T.length-2]?1:-1;
+  }
+  const iMax=T.indexOf(Math.max.apply(null,T)), iMin=T.indexOf(Math.min.apply(null,T));
+
+  const kandidaten=[];
+  for(let i=0;i<T.length;i++){
+    const rang = (i===iMax||i===iMin) ? 3 : soort[i]!==0 ? 2 : (i%stap===0) ? 1 : 0;
+    if(rang) kandidaten.push({i:i,rang:rang});
+  }
+  kandidaten.sort((a,b)=>b.rang-a.rang||a.i-b.i);
+
+  const labelBreed=v=>String(Math.round(v)).length*F.temp*0.58+F.temp*0.40;
+  const gezet=[];
+  kandidaten.forEach(k=>{
+    const i=k.i, v=T[i], bw=labelBreed(v);
+    let boven = soort[i]!==-1;
+    let cy = boven ? y(v)-(M?13:14) : y(v)+(M?18:20);
+    if(boven && cy-F.temp<by+bh+6){ boven=false; cy=y(v)+(M?18:20); }
+    if(!boven && cy>pb-3){ boven=true; cy=y(v)-(M?13:14); }
+    let cx=x(i);
+    if(cx-bw/2 < pl-2) cx=pl-2+bw/2;
+    if(cx+bw/2 > W-pr) cx=W-pr-bw/2;
+    const botst=gezet.some(g=>Math.abs(g.cx-cx)<(g.bw+bw)/2+5 && Math.abs(g.cy-cy)<F.temp+3);
+    if(botst) return;
+    gezet.push({cx:cx,cy:cy,bw:bw});
+    dots+=`<circle cx="${x(i)}" cy="${y(v)}" r="${M?1.9:2.2}" fill="${INK}"/>`;
+    // de rand in de kleur van het vel snijdt de lijn weg achter het cijfer
+    labs+=`<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" fill="${INK}"
+      stroke="${SHEET}" stroke-width="${M?3:3.4}" paint-order="stroke" stroke-linejoin="round"
+      font-family="Bodoni Moda,serif" font-size="${F.temp}">${Math.round(v)}°</text>`;
+  });
+
+  /* De aswaarde stond op x=0 en liep daardoor op een smal scherm onder de eerste
+     rasterlijn door. Nu rechts uitgelijnd binnen de linkermarge, dus ook een
+     waarde als -10 blijft vrij van de grafiek. */
   const gitter=[mx,Math.round((mn+mx)/2),mn].map((v,k)=>
-    `<line x1="${pl-6}" y1="${y(v)}" x2="${W-pr}" y2="${y(v)}" stroke="${k===2?RULE:RULES}" stroke-width="1"/>
-     <text x="0" y="${y(v)+3.5}" fill="${INK25}" font-family="DM Mono,monospace" font-size="${F.grid}">${v}°</text>`).join("");
+    `<line x1="${pl-5}" y1="${y(v)}" x2="${W-pr}" y2="${y(v)}" stroke="${k===2?RULE:RULES}" stroke-width="1"/>
+     <text x="${pl-9}" y="${y(v)+3.5}" text-anchor="end" fill="${INK25}" font-family="DM Mono,monospace" font-size="${F.grid}">${v}°</text>`).join("");
 
   const svg=document.getElementById("chart");
   svg.setAttribute("viewBox","0 0 "+W+" "+H);
@@ -1471,8 +1515,11 @@ document.getElementById("here").addEventListener("click",()=>{
   const st=document.getElementById("state");
   if(!navigator.geolocation){st.style.display="block";st.className="msg err";st.textContent="Deze browser deelt geen locatie.";return;}
   st.style.display="block";st.className="msg";st.textContent="Locatie bepalen.";
-  navigator.geolocation.getCurrentPosition(async p=>{
-    const la=p.coords.latitude,lo=p.coords.longitude;let nm=null;
+
+  const gelukt=async p=>{
+    const la=p.coords.latitude,lo=p.coords.longitude;
+    const nauw=p.coords.accuracy;          // straal in meters waar de telefoon zeker van is
+    let nm=null;
     try{
       const g=await j("/api/plaatsnaam?lat="+la.toFixed(4)+"&lon="+lo.toFixed(4));
       nm=g&&g.naam||null;
@@ -1484,8 +1531,32 @@ document.getElementById("here").addEventListener("click",()=>{
       }catch(e){}
     }
     if(!nm) nm="Huidige locatie";
-    q.value=nm;load(la,lo,nm);
-  },()=>{st.className="msg err";st.textContent="Locatie geweigerd. Zoek hierboven een plaats.";});
+    q.value=nm;
+    await load(la,lo,nm);
+    // load wist de melding, dus de waarschuwing komt er daarna pas op
+    if(isFinite(nauw)&&nauw>2500){
+      st.style.display="block";st.className="msg";
+      st.textContent="Deze positie is op ongeveer "+(nauw>=10000?Math.round(nauw/1000)+" kilometer":Math.round(nauw/100)*100+" meter")
+        +" nauwkeurig, dus mogelijk niet je eigen plaats. Zet precieze locatie aan voor je browser, of zoek de plaats hierboven.";
+    }
+  };
+
+  const mislukt=e=>{
+    st.style.display="block";st.className="msg err";
+    st.textContent = e&&e.code===1 ? "Locatie geweigerd. Zoek hierboven een plaats."
+      : e&&e.code===3 ? "Het bepalen van de locatie duurde te lang. Probeer opnieuw of zoek hierboven een plaats."
+      : "Locatie niet beschikbaar. Zoek hierboven een plaats.";
+  };
+
+  // Zonder enableHighAccuracy pakt een telefoon alleen het zendmast- en wifinetwerk
+  // en dat levert een positie op van kilometers breed. Een laptop komt daar vaak
+  // toevallig wel goed uit omdat het vaste wifipunt bekend is. Vandaar eerst gps,
+  // en pas als dat niet lukt terugvallen op de grove methode.
+  navigator.geolocation.getCurrentPosition(gelukt,e=>{
+    if(e&&e.code===1){mislukt(e);return;}   // geweigerd, opnieuw proberen heeft geen zin
+    st.textContent="Gps geeft niets terug, grovere meting proberen.";
+    navigator.geolocation.getCurrentPosition(gelukt,mislukt,{enableHighAccuracy:false,timeout:8000,maximumAge:60000});
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 });
 
 /* ---------- start ---------- */

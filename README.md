@@ -15,7 +15,15 @@ De service worker en het installeren als app werken alleen via https.
     icon-*.png                pictogrammen
     *.woff2                   Bodoni Moda, Instrument Sans en DM Mono, lokaal gehost
     api/waarschuwingen.js     serverless functie voor de MeteoAlarm-feed
-    test/                     testsuite die de echte code uit index.html draait
+    api/plaatsnaam.js         omgekeerd zoeken bij Mijn locatie, Nominatim met terugval
+    api/radarverwachting.js   tijdstappen van de KNMI-neerslagverwachting
+    test/kern.js              laadt index.html in een nagebootste browser
+    test/run.js               de controles
+    test/data.js              nagebootste API-respons per weersituatie
+
+Alles onder `api/` moet ook echt in die map staan. Vercel leidt alleen bestanden
+in `api/` om naar een functie, dus een bestand dat in de hoofdmap blijft liggen
+wordt stilzwijgend een 404 en de app valt terug op zijn noodoplossing.
 
 ## Bronnen
 
@@ -52,10 +60,27 @@ staat in de voettekst van de app. Laat die staan.
     npm test
 
 De suite leest `index.html` in en draait de echte functies, dus een wijziging in
-de app wordt meteen meegenomen. Getoetst worden onder meer de zonstijden tegen
-bekende referenties, de maanfase tegen bekende nieuwe en volle maan, de
-briefingzinnen in vier weersituaties, vier randgevallen waaronder poolzomer en
-ontbrekende data, en of de grafiek binnen zijn kader blijft op telefoon en desktop.
+de app wordt meteen meegenomen. `test/kern.js` haalt het scriptblok uit
+`index.html` en draait dat in een nagebootste browser. Er zit bewust geen jsdom
+of ander pakket in: de app raakt maar een klein deel van de DOM aan. Netwerk
+hangt met opzet, zodat de app nooit voorbij zijn eigen laadstap komt en de
+testdata niet overschrijft.
+
+Geef een breedte mee aan `laadKern` om de telefoonopmaak te toetsen, bijvoorbeeld
+`laadKern(390)`. Zonder waarde gaat hij uit van 1280.
+
+114 controles, onder meer:
+
+* zonstijden tegen bekende referenties en de maanfase tegen bekende nieuwe en volle maan
+* briefingzinnen in zes weersituaties, plus randgevallen als poolzomer en ontbrekende data
+* elk getal in de teksten heeft een eenheid of is een tijdstip
+* de grafiek blijft binnen zijn kader en aslabels raken elkaar niet, op telefoon en desktop
+* de warmste en koudste waarde krijgen altijd een cijfer, ook bij een grillig verloop
+* elke `/api/`-route die de app opvraagt heeft ook echt een bestand in `api/`
+* de locatiebepaling vraagt om gps en niet om de grove meting
+
+Zakt een test met de melding dat een naam niet meer in `index.html` staat, dan is
+een functie hernoemd. Pas dan `NODIG` in `test/kern.js` aan of herstel de naam.
 
 ## Cache verversen
 
